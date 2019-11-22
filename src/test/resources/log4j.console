@@ -1,0 +1,19 @@
+log4j.rootCategory=trace, stdout
+log4j.appender.stdout=com.kagr.tradesys.constructs.logging.ColorConsole
+
+#log4j.appender.stdout.layout=org.apache.log4j.SimpleLayout
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+
+#
+#with file and line
+#
+#log4j.appender.stdout.layout.ConversionPattern=[%c.%t][%F:%L] %d{HH:mm:ss.SSS} %p - %m%n
+#log4j.appender.stdout.layout.ConversionPattern=[%c.%t:%L] %d{HH:mm:ss.SSS} %p - %m%n
+log4j.appender.stdout.layout.ConversionPattern= [%d{HH:mm:ss}] [%c.%t] %p: %m%n
+#log4j.appender.stdout.layout.ConversionPattern=%C{1}::%M - %m%n
+
+
+#
+#without file and line
+#
+#log4j.appender.stdout.layout.ConversionPattern=[%c] %d{HH:mm:ss.SSS} %p - %m%n

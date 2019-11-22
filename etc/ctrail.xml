@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ctrail>
+
+  <!-- max number of input files that can be opened at the same time -->
+  <inputFiles>
+    <maxInputFileCount>1000</maxInputFileCount>
+  </inputFiles>
+
+  <!-- controls execution -->
+  <execution>
+    <!-- indicates how many lines each thread can add to the queue -->
+    <maxProcessingLines>1000</maxProcessingLines>
+
+    <!-- indicates max number of outbound lines not yet written to output -->
+    <maxPendingLines>100000</maxPendingLines>
+
+    <prependFilenameToLine>true</prependFilenameToLine>
+
+    <skipAheadInBytes>1000</skipAheadInBytes>
+
+    <skipAheadInBytes>1000</skipAheadInBytes>
+
+    <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+  </execution>
+
+
+  <coloring>
+    <!-- case sensitivity -->
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+
+    <filename>
+      <blankLineOnFileChange>true</blankLineOnFileChange>
+    </filename>
+
+    <!-- if any of the keywords are found on a line, then that line
+      will be colored as specified... If multiple keywords are found
+      on a line, then the line will be colored with the FIRST keyword
+      found on that line -->
+    <linecolors>
+      <!-- COLORS ARE:
+        BLACK
+        BLUE
+        CYAN
+        DEFAULT
+        GREEN
+        RED
+        WHITE
+        YELLOW -->
+
+      <defaultColor>white</defaultColor>
+
+      <colorpair>
+        <keyword>(DBG)</keyword>
+        <fgcolor>blue</fgcolor>
+      </colorpair>
+
+
+      <colorpair>
+        <keyword>(INF)</keyword>
+        <fgcolor>yellow</fgcolor>
+      </colorpair>
+
+      <colorpair>
+        <keyword>(ERR)</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+
+      <colorpair>
+        <keyword>(SEV)</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+
+      <colorpair>
+        <keyword>(WRN)</keyword>
+        <fgcolor>purple</fgcolor>
+      </colorpair>
+
+      <colorpair>
+        <keyword>(CFG)</keyword>
+        <fgcolor>cyan</fgcolor>
+      </colorpair>
+
+    </linecolors>
+  </coloring>
+
+</ctrail>

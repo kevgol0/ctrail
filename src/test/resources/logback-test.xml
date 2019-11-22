@@ -1,0 +1,16 @@
+<configuration debug="false">
+
+  <conversionRule conversionWord="kagrcolor"
+		  converterClass="com.kagr.utils.logging.LogbackColorConsole" />
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <withJansi>true</withJansi>
+    <encoder>
+      <pattern>%kagrcolor(%d{HH:mm:ss:SSS} [%thread] %-5level %logger{0} - %msg) %n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="TRACE">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>

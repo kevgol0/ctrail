@@ -1,0 +1,10 @@
+#!/bin/bash
+
+jvm=$(which java)
+if [ "$jvm" == "" ] ; then
+    $print ERR "java is required, but not found"
+    $print ERR "cannot continue"
+    exit 1
+fi
+
+exec $jvm -cp /usr/local/lib/ctrail.jar -Xms128m -Xmx256m com.kagr.tools.ctrail.CtrailEntryPoint $*
