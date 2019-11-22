@@ -1,11 +1,14 @@
-<configuration>
+<configuration debug="false">
+
+  <logger name="org.apache" level="OFF" additive="false" />
+  
   <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.err</target>
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>WARN</level>
+      <level>ERROR</level>
     </filter>
     <encoder>
-        <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -31,11 +34,12 @@
       <onMatch>DENY</onMatch>
     </filter>
     <encoder>
-        <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
-  <root level="INFO">
-    <appender-ref ref="STDOUT" />
+
+  <root level="WARN">
     <appender-ref ref="STDERR" />
+    
   </root>
 </configuration>

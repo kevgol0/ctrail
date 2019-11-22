@@ -2,8 +2,14 @@
 
 jvm=$(which java)
 if [ "$jvm" == "" ] ; then
-    $print ERR "java is required, but not found"
-    $print ERR "cannot continue"
+    echo "java is required, but not found"
+    echo "cannot continue"
+    exit 1
+fi
+
+LIB="/usr/local/lib/ctrail.jar"
+if [ ! -e $LIB ] ; then
+    echo "library not found: $LIB"
     exit 1
 fi
 

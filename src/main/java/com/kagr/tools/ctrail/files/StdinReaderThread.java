@@ -20,6 +20,10 @@ import java.util.Deque;
 
 
 
+import com.kagr.tools.ctrail.unit.LogLine;
+
+
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -29,18 +33,18 @@ import lombok.extern.slf4j.Slf4j;
 
 
 
-
+@Slf4j
 public class StdinReaderThread implements Runnable
 {
 	private InputStream _iStream;
 
-	@Getter @Setter(AccessLevel.PROTECTED) private Deque<String> _output;
+	@Getter @Setter(AccessLevel.PROTECTED) private Deque<LogLine> _output;
 
 
 
 
 
-	public StdinReaderThread(InputStream is_, @NonNull Deque<String> output_)
+	public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_)
 	{
 		_iStream = is_;
 		setOutput(output_);
@@ -57,12 +61,12 @@ public class StdinReaderThread implements Runnable
 			String line;
 			while ((line = reader.readLine()) != null)
 			{
-				_output.add(line);
+				_output.add(new LogLine(line));
 			}
 		}
 		catch (Exception ex_)
 		{
-			ex_.printStackTrace(System.err);
+			_logger.error(ex_.toString());
 
 		}
 	}

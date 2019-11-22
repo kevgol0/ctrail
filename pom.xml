@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kagr.tools</groupId>
   <artifactId>ctrail</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.3</version>
 
 
   <properties>
@@ -25,6 +25,16 @@
       <artifactId>lombok</artifactId>
       <version>1.18.8</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.25</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

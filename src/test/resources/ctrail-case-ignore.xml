@@ -58,12 +58,12 @@
         
         -->
 
-      <defaultFgColor>blue</defaultFgColor>
+      <defaultFgColor>white</defaultFgColor>
 
       <colorpair>
         <keyword>(DBG)</keyword>
         <fgcolor>blue</fgcolor>
-        <flcolor>yellow</flcolor>
+        <flcolor>yellow_underlined</flcolor>
       </colorpair>
 
 
@@ -76,11 +76,13 @@
       <colorpair>
         <keyword>(ERR)</keyword>
         <fgcolor>red</fgcolor>
+        <flcolor>blue</flcolor>
       </colorpair>
 
       <colorpair>
         <keyword>(SEV)</keyword>
         <fgcolor>red</fgcolor>
+        <flcolor>red</flcolor>
       </colorpair>
 
       <colorpair>

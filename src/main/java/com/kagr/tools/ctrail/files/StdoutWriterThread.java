@@ -17,7 +17,8 @@ import java.util.concurrent.BlockingDeque;
 
 
 
-import com.kagr.tools.ctrail.StringFormatter;
+import com.kagr.tools.ctrail.unit.LogLine;
+import com.kagr.tools.ctrail.unit.LineFormatter;
 
 
 
@@ -29,20 +30,20 @@ import lombok.extern.slf4j.Slf4j;
 
 
 
-
+@Slf4j
 public class StdoutWriterThread implements Runnable
 {
-	@Getter @Setter(AccessLevel.PRIVATE) BlockingDeque<String> _output;
-	@Getter StringFormatter _formatter;
+	@Getter @Setter(AccessLevel.PRIVATE) BlockingDeque<LogLine> _output;
+	@Getter LineFormatter _formatter;
 
 
 
 
 
-	public StdoutWriterThread(BlockingDeque<String> output_)
+	public StdoutWriterThread(BlockingDeque<LogLine> output_)
 	{
 		setOutput(output_);
-		_formatter = new StringFormatter();
+		_formatter = new LineFormatter();
 	}
 
 
@@ -60,7 +61,7 @@ public class StdoutWriterThread implements Runnable
 			}
 			catch (InterruptedException ex_)
 			{
-				ex_.printStackTrace(System.err);
+				_logger.error(ex_.toString());
 			}
 		}
 	}

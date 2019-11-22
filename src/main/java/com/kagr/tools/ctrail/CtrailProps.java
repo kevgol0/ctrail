@@ -33,11 +33,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 
 
 
 
+@Slf4j
 public class CtrailProps
 {
 
@@ -47,12 +49,15 @@ public class CtrailProps
 	@Getter @Setter private int _skipAheadInBytes;
 	@Getter @Setter private int _noChangeSleepTimeMillis;
 
-	@Getter @Setter private String _defaultColor;
-
 	@Getter @Setter private boolean _lineSearchCaseSensitiveMatching;
 	@Getter @Setter private boolean _prependFilenameToLine;
 	@Getter @Setter private boolean _blankLineOnFileChange;
+
+
+	@Getter @Setter private String _defaultFgColor;
+	@Getter @Setter private String _defaultFlColor;
 	@Getter private Hashtable<String, String> _keysToColors;
+	@Getter private Hashtable<String, String> _keysToFileColors;
 
 
 
@@ -78,6 +83,7 @@ public class CtrailProps
 	public CtrailProps()
 	{
 		_keysToColors = new Hashtable<>();
+		_keysToFileColors = new Hashtable<>();
 		String propsFileName = getConfigFile().toString();
 		Parameters params = new Parameters();
 		FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<XMLConfiguration>(XMLConfiguration.class).configure(params.xml()
@@ -97,43 +103,67 @@ public class CtrailProps
 			setPrependFilenameToLine(config.getBoolean("execution.prependFilenameToLine"));
 			setNoChangeSleepTimeMillis(config.getInt("execution.noChangeSleepTimeMillis", 100));
 			setLineSearchCaseSensitiveMatching(config.getBoolean("coloring.useCaseSensitiveSarch"));
-			setDefaultColor(config.getString("coloring.linecolors.defaultColor"));
 			setBlankLineOnFileChange(config.getBoolean("coloring.filename.blankLineOnFileChange", false));
+			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
 
 			String key = "";
-			String color = "";
+			String fgcolor = "";
+			String flcolor = "";
 			for (int i = 0; i < Integer.MAX_VALUE; i++)
 			{
 				try
 				{
 					key = config.getString("coloring.linecolors.colorpair(" + i + ").keyword");
-					color = config.getString("coloring.linecolors.colorpair(" + i + ").fgcolor");
+					fgcolor = config.getString("coloring.linecolors.colorpair(" + i + ").fgcolor");
+					flcolor = config.getString("coloring.linecolors.colorpair(" + i + ").flcolor", "");
 
-
-					color = getColorCode(color);
+					fgcolor = getColorCode(fgcolor);
+					flcolor = getColorCode(flcolor);
 
 					if (isLineSearchCaseSensitiveMatching())
-						_keysToColors.put(key, color);
+					{
+						if (!StringUtils.isEmpty(fgcolor))
+						{
+							_keysToColors.put(key, fgcolor);
+							_logger.trace("added FG:{}={}", key, fgcolor);
+						}
+						if (!StringUtils.isEmpty(flcolor))
+						{
+							_keysToFileColors.put(key, flcolor);
+							_logger.trace("added FL:{}={}", key, flcolor);
+						}
+					}
 					else
-						_keysToColors.put(key.toLowerCase(), color);
+					{
+						if (!StringUtils.isEmpty(fgcolor))
+						{
+							_keysToColors.put(key.toLowerCase(), fgcolor);
+							_logger.trace("added FG:{}={}", key.toLowerCase(), fgcolor);
+						}
+						if (!StringUtils.isEmpty(flcolor))
+						{
+							_keysToFileColors.put(key.toLowerCase(), flcolor);
+							_logger.trace("added FL:{}={}", key.toLowerCase(), flcolor);
+						}
+					}
 				}
 				catch (IllegalArgumentException ex_)
 				{
-					System.err.printf("error for key:%s, bad value:%s; ignoring...", key, color);
+					_logger.error("error for key:%s, bad value:%s; ignoring...", key, fgcolor);
 				}
 				catch (NoSuchElementException ex_)
 				{
+					if (ex_.toString().contains(".keyword"))
+						break;
+					else
+						_logger.error(ex_.toString());
 					break;
 				}
 			}
-
-
-			_keysToColors.put("DEFAULT", getColorCode(config.getString("coloring.linecolors.defaultColor")));
-
 		}
 		catch (Exception ex_)
 		{
-			ex_.printStackTrace(System.err);
+			_logger.error(ex_.toString());
 		}
 	}
 
@@ -141,36 +171,49 @@ public class CtrailProps
 
 
 
-	private String getColorCode(String color)
+	private String getColorCode(String color_)
 	{
-		switch (color.toUpperCase())
+		if (StringUtils.isEmpty(color_))
+			return null;
+
+		switch (color_.toUpperCase())
 		{
 		case "BLACK":
-			color = ConsoleColors.BLACK;
-			break;
+			return ConsoleColors.BLACK;
 		case "RED":
-			color = ConsoleColors.RED;
-			break;
+			return ConsoleColors.RED;
 		case "GREEN":
-			color = ConsoleColors.GREEN_BOLD;
-			break;
+			return ConsoleColors.GREEN_BOLD;
 		case "YELLOW":
-			color = ConsoleColors.YELLOW;
-			break;
+			return ConsoleColors.YELLOW;
 		case "BLUE":
-			color = ConsoleColors.BLUE;
-			break;
+			return ConsoleColors.BLUE;
 		case "PURPLE":
-			color = ConsoleColors.PURPLE;
-			break;
+			return ConsoleColors.PURPLE;
 		case "CYAN":
-			color = ConsoleColors.CYAN;
-			break;
+			return ConsoleColors.CYAN;
 		case "WHITE":
-			color = ConsoleColors.WHITE;
-			break;
+			return ConsoleColors.WHITE;
+		case "BLACK_UNDERLINED":
+			return ConsoleColors.BLACK_UNDERLINED;
+		case "RED_UNDERLINED":
+			return ConsoleColors.RED_UNDERLINED;
+		case "GREEN_UNDERLINED":
+			return ConsoleColors.GREEN_UNDERLINED;
+		case "YELLOW_UNDERLINED":
+			return ConsoleColors.YELLOW_UNDERLINED;
+		case "BLUE_UNDERLINED":
+			return ConsoleColors.BLUE_UNDERLINED;
+		case "PURPLE_UNDERLINED":
+			return ConsoleColors.PURPLE_UNDERLINED;
+		case "CYAN_UNDERLINED":
+			return ConsoleColors.CYAN_UNDERLINED;
+		case "WHITE_UNDERLINED":
+			return ConsoleColors.WHITE_UNDERLINED;
 		}
-		return color;
+
+		_logger.warn("color:{} not regognized, returning null");
+		return null;
 	}
 
 
@@ -179,16 +222,8 @@ public class CtrailProps
 
 	private static Path getConfigFile()
 	{
-
-		Path cfgFilePath = Paths.get(".", "ctrail.xml");
-		if (Files.exists(cfgFilePath))
-		{
-			return cfgFilePath;
-		}
-
-
-
-		String cfgOverride = System.getenv("CTRAIL_CFG");
+		Path cfgFilePath;
+		String cfgOverride = System.getProperty("CTRAIL_CFG");
 		if (!StringUtils.isEmpty(cfgOverride))
 		{
 			cfgFilePath = Paths.get(cfgOverride);
@@ -197,6 +232,13 @@ public class CtrailProps
 				return cfgFilePath;
 			}
 		}
+
+		cfgFilePath = Paths.get(".", "ctrail.xml");
+		if (Files.exists(cfgFilePath))
+		{
+			return cfgFilePath;
+		}
+
 
 		cfgFilePath = Paths.get("/etc", "ctrail.xml");
 		if (Files.exists(cfgFilePath))

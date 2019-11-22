@@ -26,10 +26,10 @@
 
   <coloring>
     <!-- case sensitivity -->
-    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
 
     <filename>
-      <blankLineOnFileChange>true</blankLineOnFileChange>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
 
     <!-- if any of the keywords are found on a line, then that line
@@ -58,7 +58,7 @@
         
         -->
 
-      <defaultFgColor>blue</defaultFgColor>
+      <defaultFgColor>white</defaultFgColor>
 
       <colorpair>
         <keyword>(DBG)</keyword>
@@ -76,11 +76,13 @@
       <colorpair>
         <keyword>(ERR)</keyword>
         <fgcolor>red</fgcolor>
+        <flcolor>blue</flcolor>
       </colorpair>
 
       <colorpair>
         <keyword>(SEV)</keyword>
         <fgcolor>red</fgcolor>
+        <fgcolor>blue</fgcolor>
       </colorpair>
 
       <colorpair>

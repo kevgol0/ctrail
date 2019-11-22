@@ -20,21 +20,23 @@ import java.util.concurrent.BlockingDeque;
 
 
 import com.kagr.tools.ctrail.CtrailProps;
+import com.kagr.tools.ctrail.unit.LogLine;
 
 
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 
 
 
-
+@Slf4j
 public class FileReaderThread implements Runnable
 {
 	@Getter @Setter(AccessLevel.PRIVATE) private BlockingDeque<FileTailTracker> _fileTrackers;
-	@Getter @Setter(AccessLevel.PRIVATE) private Deque<String> _output;
+	@Getter @Setter(AccessLevel.PRIVATE) private Deque<LogLine> _output;
 	@Getter @Setter private int _maxLinesPerThread;
 
 	private CtrailProps _props;
@@ -43,7 +45,7 @@ public class FileReaderThread implements Runnable
 
 
 
-	public FileReaderThread(BlockingDeque<FileTailTracker> fileTrackers_, Deque<String> strOutput_)
+	public FileReaderThread(BlockingDeque<FileTailTracker> fileTrackers_, Deque<LogLine> strOutput_)
 	{
 		setFileTrackers(fileTrackers_);
 		setOutput(strOutput_);
@@ -71,7 +73,7 @@ public class FileReaderThread implements Runnable
 				tracker = _fileTrackers.take();
 				if (tracker == null)
 				{
-					System.err.println("null tracker retrieed, exiting run loop");
+					_logger.error("null tracker retrieed, exiting run loop");
 					break;
 				}
 
@@ -90,7 +92,7 @@ public class FileReaderThread implements Runnable
 
 
 					if (_props.isBlankLineOnFileChange())
-						_output.add("");
+						_output.add(new LogLine(""));
 				}
 				else
 				{
@@ -112,11 +114,11 @@ public class FileReaderThread implements Runnable
 			}
 			catch (InterruptedException ex_)
 			{
-				ex_.printStackTrace(System.err);
+				_logger.error(ex_.toString());
 			}
 			catch (IOException ex_)
 			{
-				ex_.printStackTrace(System.err);
+				_logger.error(ex_.toString());
 			}
 
 		}
@@ -135,11 +137,11 @@ public class FileReaderThread implements Runnable
 
 			if (_props.isPrependFilenameToLine())
 			{
-				_output.add(tracker_.getFileName().concat(":").concat(tracker_.getFile().readLine()));
+				_output.add(new LogLine(tracker_.getFileName(), tracker_.getFile().readLine()));
 			}
 			else
 			{
-				_output.add(tracker_.getFile().readLine());
+				_output.add(new LogLine(tracker_.getFile().readLine()));
 			}
 			readPos = tracker_.getFile().getFilePointer();
 			tracker_.setLastReadPosition(readPos);

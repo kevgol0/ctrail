@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 
-
+@Slf4j
 public class FileTailTracker
 {
 	@Getter @Setter private RandomAccessFile _file;
@@ -63,7 +63,7 @@ public class FileTailTracker
 		}
 		catch (IOException ex_)
 		{
-			ex_.printStackTrace(System.err);
+			_logger.error(ex_.toString());
 		}
 	}
 
