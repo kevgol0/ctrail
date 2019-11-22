@@ -26,10 +26,10 @@
 
   <coloring>
     <!-- case sensitivity -->
-    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
 
     <filename>
-      <blankLineOnFileChange>true</blankLineOnFileChange>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
 
     <!-- if any of the keywords are found on a line, then that line
@@ -45,8 +45,8 @@
         GREEN
         RED
         WHITE
-        YELLOW 
-        
+        YELLOW
+
         BLACK_UNDERLINED
         BLUE_UNDERLINED
         CYAN_UNDERLINED
@@ -54,42 +54,40 @@
         GREEN_UNDERLINED
         RED_UNDERLINED
         WHITE_UNDERLINED
-        YELLOW_UNDERLINED 
-        
-        -->
+        YELLOW_UNDERLINED
 
-      <defaultFgColor>blue</defaultFgColor>
+      -->
+
+      <defaultFgColor>white</defaultFgColor>
 
       <colorpair>
-        <keyword>(DBG)</keyword>
+        <keyword>(dbg)</keyword>
         <fgcolor>blue</fgcolor>
         <flcolor>yellow</flcolor>
       </colorpair>
 
-
       <colorpair>
-        <keyword>(INF)</keyword>
+        <keyword>(inf)</keyword>
         <fgcolor>yellow</fgcolor>
-        <flcolor>blue_underlined</flcolor>
       </colorpair>
 
       <colorpair>
-        <keyword>(ERR)</keyword>
+        <keyword>(err)</keyword>
         <fgcolor>red</fgcolor>
       </colorpair>
 
       <colorpair>
-        <keyword>(SEV)</keyword>
+        <keyword>(sev)</keyword>
         <fgcolor>red</fgcolor>
       </colorpair>
 
       <colorpair>
-        <keyword>(WRN)</keyword>
+        <keyword>(wrn)</keyword>
         <fgcolor>purple</fgcolor>
       </colorpair>
 
       <colorpair>
-        <keyword>(CFG)</keyword>
+        <keyword>(cfg)</keyword>
         <fgcolor>cyan</fgcolor>
       </colorpair>
 

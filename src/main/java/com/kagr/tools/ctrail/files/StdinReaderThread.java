@@ -61,7 +61,7 @@ public class StdinReaderThread implements Runnable
 			String line;
 			while ((line = reader.readLine()) != null)
 			{
-				_output.add(new LogLine(line));
+				_output.add(new LogLine("stdin", line));
 			}
 		}
 		catch (Exception ex_)

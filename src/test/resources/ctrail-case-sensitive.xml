@@ -14,7 +14,7 @@
     <!-- indicates max number of outbound lines not yet written to output -->
     <maxPendingLines>100000</maxPendingLines>
 
-    <prependFilenameToLine>true</prependFilenameToLine>
+    <prependFilenameToLine>false</prependFilenameToLine>
 
     <skipAheadInBytes>1000</skipAheadInBytes>
 
@@ -26,7 +26,7 @@
 
   <coloring>
     <!-- case sensitivity -->
-    <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <filename>
       <blankLineOnFileChange>false</blankLineOnFileChange>

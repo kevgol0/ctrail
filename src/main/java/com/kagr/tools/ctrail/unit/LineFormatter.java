@@ -126,13 +126,37 @@ public class LineFormatter
 		}
 
 
-		if (_tmpFileClr != null)
-			_tmpRslt = _tmpFileClr + line_.getOrigFilename() + ":";
 
-		if (_tmpRsltClr == null)
-			_tmpRslt = DEF_FG_COLOR + line_.getOrigFilename() + ": " + line_.getLine() + _reset;
+		if (line_.getOrigFilename() != null)
+		{
+			if (_tmpFileClr != null)
+			{
+				_tmpRslt = _tmpFileClr + line_.getOrigFilename() + ":";
+			}
+			else if (_tmpRsltClr != null)
+			{
+				_tmpRslt = _tmpRsltClr + line_.getOrigFilename() + ":";
+			}
+			else
+			{
+				_tmpRslt = line_.getOrigFilename() + ":";
+			}
+		}
 		else
-			_tmpRslt = _tmpRslt + _tmpRsltClr + line_.getLine() + _reset;
+		{
+			_tmpRslt = "";
+		}
+
+
+
+		if (_tmpRsltClr != null)
+		{
+			_tmpRslt += _tmpRsltClr + line_.getLine() + _reset;
+		}
+		else
+		{
+			_tmpRslt += line_.getLine() + _reset;
+		}
 
 		return _tmpRslt;
 	}
