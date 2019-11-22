@@ -24,7 +24,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 
 
-import com.kagr.tools.ctrail.files.CtrailWriterThread;
+import com.kagr.tools.ctrail.files.StdoutWriterThread;
 import com.kagr.tools.ctrail.files.FileReaderThread;
 import com.kagr.tools.ctrail.files.FileTailTracker;
 import com.kagr.tools.ctrail.files.StdinReaderThread;
@@ -89,7 +89,7 @@ public class CtrailEntryPoint
 
 	private void initWriterThreads()
 	{
-		_writer = new Thread(new CtrailWriterThread(_output));
+		_writer = new Thread(new StdoutWriterThread(_output));
 		_writer.start();
 	}
 
