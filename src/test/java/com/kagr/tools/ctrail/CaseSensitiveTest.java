@@ -40,6 +40,6 @@ public class CaseSensitiveTest
 		};
 
 		CtrailEntryPoint ep = new CtrailEntryPoint(args);
-		ep.start(1000000);
+		ep.start(100);
 	}
 }
