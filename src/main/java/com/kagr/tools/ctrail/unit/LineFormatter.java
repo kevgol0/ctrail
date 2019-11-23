@@ -46,7 +46,7 @@ public class LineFormatter
 	private transient String _tmpKey;
 	private transient String _tmpRslt;
 	private transient String _tmpStr;
-	private transient String _tmpRsltClr;
+	private transient String _tmpLogClr;
 	private transient String _tmpFileClr;
 
 
@@ -58,7 +58,7 @@ public class LineFormatter
 		if (str_ == null) return str_;
 		_tmpRslt = null;
 		_tmpKey = null;
-		_tmpRsltClr = null;
+		_tmpLogClr = null;
 		for (int i = 0; i < _keysSz; i++)
 		{
 			_tmpKey = _keys.get(i);
@@ -75,16 +75,16 @@ public class LineFormatter
 
 			if (_tmpStr.contains(_tmpKey))
 			{
-				_tmpRsltClr = _keysToColors.get(_tmpKey);
+				_tmpLogClr = _keysToColors.get(_tmpKey);
 				break;
 			}
 		}
 
 
-		if (_tmpRsltClr == null)
+		if (_tmpLogClr == null)
 			_tmpRslt = DEF_FG_COLOR + str_ + _reset;
 		else
-			_tmpRslt = _tmpRsltClr + str_ + _reset;
+			_tmpRslt = _tmpLogClr + str_ + _reset;
 
 		return _tmpRslt;
 	}
@@ -98,7 +98,7 @@ public class LineFormatter
 		if (line_ == null) return "";
 		_tmpRslt = null;
 		_tmpKey = null;
-		_tmpRsltClr = null;
+		_tmpLogClr = null;
 		_tmpFileClr = null;
 
 		if (_props.isLineSearchCaseSensitiveMatching())
@@ -119,7 +119,7 @@ public class LineFormatter
 			_tmpKey = _keys.get(i);
 			if (_tmpStr.contains(_tmpKey))
 			{
-				_tmpRsltClr = _keysToColors.get(_tmpKey);
+				_tmpLogClr = _keysToColors.get(_tmpKey);
 				_tmpFileClr = _keysToFileColors.get(_tmpKey);
 				break;
 			}
@@ -133,13 +133,13 @@ public class LineFormatter
 			{
 				_tmpRslt = _tmpFileClr + line_.getOrigFilename() + ":";
 			}
-			else if (_tmpRsltClr != null)
+			else if (_tmpLogClr != null)
 			{
-				_tmpRslt = _tmpRsltClr + line_.getOrigFilename() + ":";
+				_tmpRslt = _tmpLogClr + line_.getOrigFilename() + ":";
 			}
 			else
 			{
-				_tmpRslt = line_.getOrigFilename() + ":";
+				_tmpRslt = DEF_FG_COLOR + line_.getOrigFilename() + ":";
 			}
 		}
 		else
@@ -149,13 +149,13 @@ public class LineFormatter
 
 
 
-		if (_tmpRsltClr != null)
+		if (_tmpLogClr != null)
 		{
-			_tmpRslt += _tmpRsltClr + line_.getLine() + _reset;
+			_tmpRslt += _tmpLogClr + line_.getLine() + _reset;
 		}
 		else
 		{
-			_tmpRslt += line_.getLine() + _reset;
+			_tmpRslt += DEF_FG_COLOR + line_.getLine() + _reset;
 		}
 
 		return _tmpRslt;
