@@ -88,7 +88,7 @@ public class FileReaderThread implements Runnable
 					nEmptyItrCnt = 0;
 
 					// if this fails, then the file will not return unto the queue...
-					readToFilePosition(tracker, tracker.getLastReadPosition() + szToRead);
+					readToFilePosition(tracker);
 
 
 					if (_props.isBlankLineOnFileChange())
@@ -128,11 +128,12 @@ public class FileReaderThread implements Runnable
 
 
 
-	private int readToFilePosition(FileTailTracker tracker_, long upTo_) throws IOException
+	private int readToFilePosition(FileTailTracker tracker_) throws IOException
 	{
 		long readPos = tracker_.getFile().getFilePointer();
 		int nReadLines = 0;
-		while (readPos < upTo_)
+		long eof =  tracker_.getFile().length();
+		while (readPos < eof)
 		{
 
 			if (_props.isPrependFilenameToLine())

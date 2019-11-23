@@ -97,7 +97,7 @@ public class CtrailProps
 
 			XMLConfiguration config = builder.getConfiguration();
 			setMaxNbrInputFiles(config.getInt("inputFiles.maxInputFileCount"));
-			setMaxProcessingLinesPerThread(config.getInt("execution.maxProcessingLines"));
+			setMaxProcessingLinesPerThread(config.getInt("execution.maxProcessingLines", 1000));
 			setMaxPendingLines(config.getInt("execution.maxPendingLines"));
 			setSkipAheadInBytes(config.getInt("execution.skipAheadInBytes", 1000));
 			setPrependFilenameToLine(config.getBoolean("execution.prependFilenameToLine"));

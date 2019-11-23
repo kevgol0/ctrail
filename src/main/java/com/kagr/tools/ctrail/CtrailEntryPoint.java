@@ -61,7 +61,7 @@ public class CtrailEntryPoint
 		// start them up
 		//
 		_output = new LinkedBlockingDeque<LogLine>(CtrailProps.getInstance().getMaxPendingLines());
-		_fileTrackers = new LinkedBlockingDeque<FileTailTracker>();
+		_fileTrackers = new LinkedBlockingDeque<FileTailTracker>(CtrailProps.getInstance().getMaxNbrInputFiles());
 		initWriterThreads();
 		initReaderThreads(args_);
 
@@ -101,13 +101,29 @@ public class CtrailEntryPoint
 
 	private BlockingDeque<FileTailTracker> getFilesFromArgs(String[] args_)
 	{
-		LinkedBlockingDeque<FileTailTracker> deq = new LinkedBlockingDeque<>();
+		int maxFileCnt = CtrailProps.getInstance().getMaxNbrInputFiles();
+		LinkedBlockingDeque<FileTailTracker> deq = new LinkedBlockingDeque<>(maxFileCnt);
+		int cntr = 0;
+		File file;
 		for (String s : args_)
 		{
 			try
 			{
-				RandomAccessFile raf = new RandomAccessFile(new File(s), "r");
-				deq.add(new FileTailTracker(s, raf));
+				file = new File(s);
+				if (!file.isFile() || !file.canRead())
+				{
+					if (_logger.isInfoEnabled())
+						_logger.info("{} is either not a file or not readable", s);
+					continue;
+				}
+
+				if (cntr++ >= maxFileCnt)
+				{
+					_logger.warn("max number of files exceeded:{}, ignoring remaining files", cntr);
+					break;
+				}
+
+				deq.add(new FileTailTracker(s, new RandomAccessFile(file, "r")));
 			}
 			catch (Exception ex_)
 			{

@@ -19,6 +19,10 @@ import java.util.List;
 
 
 
+import org.apache.commons.lang3.StringUtils;
+
+
+
 import com.kagr.tools.ctrail.ConsoleColors;
 import com.kagr.tools.ctrail.CtrailProps;
 
@@ -91,7 +95,12 @@ public class LineFormatter
 
 	public String format(LogLine line_)
 	{
-		if (line_ == null) return "";
+		if (line_ == null)
+			return "";
+		else if (StringUtils.isEmpty(line_.getLine()))
+			return "";
+
+
 		_tmpRslt = null;
 		_tmpKey = null;
 		_tmpLogClr = null;

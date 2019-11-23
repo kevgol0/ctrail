@@ -6,6 +6,11 @@
     <target>System.err</target>
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>ERROR</level>
+      <onMatch>ACCEPT</onMatch>
+    </filter>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>WARN</level>
+      <onMatch>ACCEPT</onMatch>
     </filter>
     <encoder>
       <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -38,8 +43,8 @@
     </encoder>
   </appender>
 
-  <root level="WARN">
+  <root level="DEBUG">
     <appender-ref ref="STDERR" />
-    
+    <appender-ref ref="STDOUT" />
   </root>
 </configuration>
