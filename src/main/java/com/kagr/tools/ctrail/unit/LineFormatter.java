@@ -24,10 +24,6 @@ import com.kagr.tools.ctrail.CtrailProps;
 
 
 
-import lombok.NonNull;
-
-
-
 
 
 public class LineFormatter

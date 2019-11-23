@@ -14,7 +14,7 @@
     <!-- indicates max number of outbound lines not yet written to output -->
     <maxPendingLines>100000</maxPendingLines>
 
-    <prependFilenameToLine>false</prependFilenameToLine>
+    <prependFilenameToLine>true</prependFilenameToLine>
 
     <skipAheadInBytes>1000</skipAheadInBytes>
 
@@ -58,10 +58,19 @@
 
       <defaultFgColor>white</defaultFgColor>
 
+
+
+      <!-- full color par example:
+        <colorpair>
+        <keyword>(dbg)</keyword>
+        <fgcolor>blue</fgcolor>
+        <flcolor>blue_underline</flcolor>
+        </colorpair>
+      -->
+
       <colorpair>
         <keyword>(dbg)</keyword>
         <fgcolor>blue</fgcolor>
-        <flcolor>blue_underlined</flcolor>
       </colorpair>
 
       <colorpair>
