@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 
+
 @Slf4j
 public class FileReaderThread implements Runnable
 {
@@ -87,7 +88,8 @@ public class FileReaderThread implements Runnable
 				{
 					nEmptyItrCnt = 0;
 
-					// if this fails, then the file will not return unto the queue...
+					// if this fails, (meaning there was a file read error)
+					// then the file will not return unto the queue...
 					readToFilePosition(tracker);
 
 
@@ -115,10 +117,17 @@ public class FileReaderThread implements Runnable
 			catch (InterruptedException ex_)
 			{
 				_logger.error(ex_.toString());
+				_logger.warn("Interrupted! - breaking out of read-loop");
+				break;
 			}
 			catch (IOException ex_)
 			{
 				_logger.error(ex_.toString());
+				if (_fileTrackers.size() <= 0)
+				{
+					_logger.warn("I/O error resulted in no additional files for processing, breaking out of read-loop");
+					break;
+				}
 			}
 
 		}
@@ -132,7 +141,7 @@ public class FileReaderThread implements Runnable
 	{
 		long readPos = tracker_.getFile().getFilePointer();
 		int nReadLines = 0;
-		long eof =  tracker_.getFile().length();
+		long eof = tracker_.getFile().length();
 		while (readPos < eof)
 		{
 
