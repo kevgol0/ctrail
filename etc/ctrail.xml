@@ -27,7 +27,7 @@
     <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
 
     <filename>
-      <blankLineOnFileChange>true</blankLineOnFileChange>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
 
     <!-- if any of the keywords are found on a line, then that line

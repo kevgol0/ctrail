@@ -18,6 +18,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
 
@@ -43,19 +44,20 @@ import lombok.extern.slf4j.Slf4j;
 public class CtrailProps
 {
 
-	@Getter @Setter private int _maxNbrInputFiles;
-	@Getter @Setter private int _maxProcessingLinesPerThread;
-	@Getter @Setter private int _maxPendingLines;
-	@Getter @Setter private int _skipAheadInBytes;
-	@Getter @Setter private int _noChangeSleepTimeMillis;
+	private static final String CTRAIL_XML = "ctrail.xml";
+	@Getter @Setter private int _maxNbrInputFiles = 100;
+	@Getter @Setter private int _maxProcessingLinesPerThread = 1000;
+	@Getter @Setter private int _maxPendingLines = 100000;
+	@Getter @Setter private int _skipAheadInBytes = 1000;
+	@Getter @Setter private int _noChangeSleepTimeMillis = 100;
 
-	@Getter @Setter private boolean _lineSearchCaseSensitiveMatching;
-	@Getter @Setter private boolean _prependFilenameToLine;
-	@Getter @Setter private boolean _blankLineOnFileChange;
+	@Getter @Setter private boolean _lineSearchCaseSensitiveMatching = false;
+	@Getter @Setter private boolean _prependFilenameToLine = true;
+	@Getter @Setter private boolean _blankLineOnFileChange = false;
 
 
-	@Getter @Setter private String _defaultFgColor;
-	@Getter @Setter private String _defaultFlColor;
+	@Getter @Setter private String _defaultFgColor = "white";
+	@Getter @Setter private String _defaultFlColor = "";
 	@Getter private Hashtable<String, String> _keysToColors;
 	@Getter private Hashtable<String, String> _keysToFileColors;
 
@@ -84,7 +86,7 @@ public class CtrailProps
 	{
 		_keysToColors = new Hashtable<>();
 		_keysToFileColors = new Hashtable<>();
-		String propsFileName = getConfigFile().toString();
+		String propsFileName = getConfigFile();
 		Parameters params = new Parameters();
 		FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<XMLConfiguration>(XMLConfiguration.class).configure(params.xml()
 				.setThrowExceptionOnMissing(true)
@@ -96,20 +98,31 @@ public class CtrailProps
 		{
 
 			XMLConfiguration config = builder.getConfiguration();
-			setMaxNbrInputFiles(config.getInt("inputFiles.maxInputFileCount"));
-			setMaxProcessingLinesPerThread(config.getInt("execution.maxProcessingLines", 1000));
-			setMaxPendingLines(config.getInt("execution.maxPendingLines"));
-			setSkipAheadInBytes(config.getInt("execution.skipAheadInBytes", 1000));
-			setPrependFilenameToLine(config.getBoolean("execution.prependFilenameToLine"));
-			setNoChangeSleepTimeMillis(config.getInt("execution.noChangeSleepTimeMillis", 100));
-			setLineSearchCaseSensitiveMatching(config.getBoolean("coloring.useCaseSensitiveSarch"));
-			setBlankLineOnFileChange(config.getBoolean("coloring.filename.blankLineOnFileChange", false));
+			setMaxNbrInputFiles(config.getInt("inputFiles.maxInputFileCount", _maxNbrInputFiles));
+			setMaxProcessingLinesPerThread(config.getInt("execution.maxProcessingLines", _maxProcessingLinesPerThread));
+			setMaxPendingLines(config.getInt("execution.maxPendingLines", _maxPendingLines));
+			setSkipAheadInBytes(config.getInt("execution.skipAheadInBytes", _skipAheadInBytes));
+			setPrependFilenameToLine(config.getBoolean("execution.prependFilenameToLine", _prependFilenameToLine));
+			setNoChangeSleepTimeMillis(config.getInt("execution.noChangeSleepTimeMillis", _noChangeSleepTimeMillis));
+			setLineSearchCaseSensitiveMatching(config.getBoolean("coloring.useCaseSensitiveSarch", _lineSearchCaseSensitiveMatching));
+			setBlankLineOnFileChange(config.getBoolean("coloring.filename.blankLineOnFileChange", _blankLineOnFileChange));
 			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
+
+
+			int lineColorCfgSz = 0;
+			try
+			{
+				lineColorCfgSz = ((Collection<?>) config.getProperty("coloring.linecolors.colorpair.keyword")).size();
+				_logger.trace("total number of line colors found:{}", lineColorCfgSz);
+			}
+			catch (Exception ex_1)
+			{
+			}
 
 			String key = "";
 			String fgcolor = "";
 			String flcolor = "";
-			for (int i = 0; i < Integer.MAX_VALUE; i++)
+			for (int i = 0; i < lineColorCfgSz; i++)
 			{
 				try
 				{
@@ -220,7 +233,7 @@ public class CtrailProps
 
 
 
-	private static Path getConfigFile()
+	private static String getConfigFile()
 	{
 		Path cfgFilePath;
 		String cfgOverride = System.getProperty("CTRAIL_CFG");
@@ -229,36 +242,24 @@ public class CtrailProps
 			cfgFilePath = Paths.get(cfgOverride);
 			if (Files.exists(cfgFilePath))
 			{
-				return cfgFilePath;
+				return cfgFilePath.toString();
 			}
 		}
 
-		cfgFilePath = Paths.get(".", "ctrail.xml");
+		cfgFilePath = Paths.get(".", CTRAIL_XML);
 		if (Files.exists(cfgFilePath))
 		{
-			return cfgFilePath;
+			return cfgFilePath.toString();
 		}
 
 
-		cfgFilePath = Paths.get("/etc", "ctrail.xml");
+		cfgFilePath = Paths.get("/etc", CTRAIL_XML);
 		if (Files.exists(cfgFilePath))
 		{
-			return cfgFilePath;
+			return cfgFilePath.toString();
 		}
 
-
-		try
-		{
-			URL res = CtrailProps.class.getResource("/ctrail.xml");
-			if (res != null)
-				return Paths.get(res.toURI());
-		}
-		catch (URISyntaxException ex_)
-		{
-			ex_.printStackTrace();
-		}
-
-
-		throw new RuntimeException("config file not found");
+		// KAGR: bug - should read config from jar
+		return "";
 	}
 }
