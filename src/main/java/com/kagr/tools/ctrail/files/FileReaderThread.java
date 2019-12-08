@@ -38,6 +38,7 @@ public class FileReaderThread implements Runnable
 {
 	@Getter @Setter(AccessLevel.PRIVATE) private BlockingDeque<FileTailTracker> _fileTrackers;
 	@Getter @Setter(AccessLevel.PRIVATE) private Deque<LogLine> _output;
+	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
 	@Getter @Setter private int _maxLinesPerThread;
 
 	private CtrailProps _props;
@@ -46,11 +47,12 @@ public class FileReaderThread implements Runnable
 
 
 
-	public FileReaderThread(BlockingDeque<FileTailTracker> fileTrackers_, Deque<LogLine> strOutput_)
+	public FileReaderThread(BlockingDeque<FileTailTracker> fileTrackers_, Deque<LogLine> strOutput_, String match_)
 	{
 		setFileTrackers(fileTrackers_);
 		setOutput(strOutput_);
 		setMaxLinesPerThread(CtrailProps.getInstance().getMaxProcessingLinesPerThread());
+		setMatch(match_);
 	}
 
 
@@ -142,16 +144,24 @@ public class FileReaderThread implements Runnable
 		long readPos = tracker_.getFile().getFilePointer();
 		int nReadLines = 0;
 		long eof = tracker_.getFile().length();
+		String line;
 		while (readPos < eof)
 		{
+			line = tracker_.getFile().readLine();
+			if (line == null) break;
+
+			if (_match != null && !line.contains(_match))
+			{
+				continue;
+			}
 
 			if (_props.isPrependFilenameToLine())
 			{
-				_output.add(new LogLine(tracker_.getFileName(), tracker_.getFile().readLine()));
+				_output.add(new LogLine(tracker_.getFileName(), line));
 			}
 			else
 			{
-				_output.add(new LogLine(tracker_.getFile().readLine()));
+				_output.add(new LogLine(line));
 			}
 			readPos = tracker_.getFile().getFilePointer();
 			tracker_.setLastReadPosition(readPos);

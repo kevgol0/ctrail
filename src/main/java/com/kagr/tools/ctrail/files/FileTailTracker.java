@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 
+
 @Slf4j
 public class FileTailTracker
 {
@@ -57,6 +58,9 @@ public class FileTailTracker
 		// only look at the end of the file
 		try
 		{
+			if (CtrailProps.getInstance().getSkipAheadInBytes() <= 0)
+				return;
+
 			if (_file.length() > CtrailProps.getInstance().getSkipAheadInBytes())
 				_lastReadPosition = _file.length() - CtrailProps.getInstance().getSkipAheadInBytes();
 			_file.seek(_lastReadPosition);

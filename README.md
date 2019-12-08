@@ -20,7 +20,7 @@ In other words, it looks in the current working directory for any localization f
 * bash script: `ctr`, usually located in `/usr/local/bin/`
 * library file: 
     * usually located in: `/usr/local/lib/ctrail-XXX.jar`
-    * aliased (ln -s) to `ctrail.jar`
+    * linked (ln -s) to `ctrail.jar`
 
 * config file: `/etc/ctrail.xml` 
     * any local configs you want

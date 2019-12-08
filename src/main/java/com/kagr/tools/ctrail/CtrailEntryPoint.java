@@ -20,6 +20,15 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
+
+
 import com.kagr.tools.ctrail.files.FileReaderThread;
 import com.kagr.tools.ctrail.files.FileTailTracker;
 import com.kagr.tools.ctrail.files.StdinReaderThread;
@@ -41,6 +50,7 @@ public class CtrailEntryPoint
 	private Thread _writer;
 	private BlockingDeque<LogLine> _output;
 	private BlockingDeque<FileTailTracker> _fileTrackers;
+	private String _matchpattern;
 
 
 
@@ -52,7 +62,7 @@ public class CtrailEntryPoint
 		// props
 		// 
 		loadProps();
-		loadArgsAndOverrides(args_);
+		String[] remainingArgs = loadArgsAndOverrides(args_);
 
 
 
@@ -63,7 +73,7 @@ public class CtrailEntryPoint
 		_output = new LinkedBlockingDeque<LogLine>(CtrailProps.getInstance().getMaxPendingLines());
 		_fileTrackers = new LinkedBlockingDeque<FileTailTracker>(CtrailProps.getInstance().getMaxNbrInputFiles());
 		initWriterThreads();
-		initReaderThreads(args_);
+		initReaderThreads(remainingArgs);
 
 	}
 
@@ -76,11 +86,11 @@ public class CtrailEntryPoint
 		_fileTrackers = getFilesFromArgs(args_);
 		if (_fileTrackers.size() <= 0)
 		{
-			_reader = new Thread(new StdinReaderThread(System.in, _output));
+			_reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern));
 		}
 		else
 		{
-			_reader = new Thread(new FileReaderThread(_fileTrackers, _output));
+			_reader = new Thread(new FileReaderThread(_fileTrackers, _output, _matchpattern));
 		}
 		_reader.start();
 	}
@@ -146,8 +156,36 @@ public class CtrailEntryPoint
 
 
 
-	private void loadArgsAndOverrides(String[] args_)
+	private String[] loadArgsAndOverrides(String[] args_)
 	{
+		CommandLineParser parser = new DefaultParser();
+		Options options = new Options();
+
+		options.addOption(Option.builder("e").longOpt("entirefile").desc("runs through the entire file").build());
+		options.addOption(Option.builder("m").longOpt("match").hasArg().argName("STR")
+				.desc("only show lines that match STR")
+				.build());
+
+		try
+		{
+			CommandLine line = parser.parse(options, args_);
+
+			if (line.hasOption("e"))
+				CtrailProps.getInstance().setSkipAheadInBytes(0);
+			if (line.hasOption("m"))
+				_matchpattern = line.getOptionValue("m");
+			if (line.hasOption("h"))
+				System.out.println("");
+
+			return line.getArgs();
+		}
+		catch (ParseException ex_)
+		{
+			_logger.error(ex_.toString());
+		}
+
+
+		return args_;
 	}
 
 

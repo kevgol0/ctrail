@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 
+
 @Slf4j
 public class StdinReaderThread implements Runnable
 {
@@ -40,14 +41,17 @@ public class StdinReaderThread implements Runnable
 
 	@Getter @Setter(AccessLevel.PROTECTED) private Deque<LogLine> _output;
 
+	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
 
 
 
 
-	public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_)
+
+	public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_, String match_)
 	{
 		_iStream = is_;
 		setOutput(output_);
+		setMatch(match_);
 	}
 
 
@@ -61,7 +65,10 @@ public class StdinReaderThread implements Runnable
 			String line;
 			while ((line = reader.readLine()) != null)
 			{
-				_output.add(new LogLine("stdin", line));
+				if (_match == null)
+					_output.add(new LogLine("stdin", line));
+				else if (line.contains(_match))
+					_output.add(new LogLine("stdin", line));
 			}
 		}
 		catch (Exception ex_)
