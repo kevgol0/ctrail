@@ -38,9 +38,12 @@ public class LineFormatter
 	private static CtrailProps _props = CtrailProps.getInstance();
 	private static Hashtable<String, String> _keysToColors = _props.getKeysToColors();
 	private static Hashtable<String, String> _keysToFileColors = _props.getKeysToFileColors();
-	private static List<String> _keys = Collections.list(_keysToColors.keys());;
+	
+	private static List<String> _keys =_props.getKeys();
 	private static int _keysSz = _keys.size();
+	
 	private static final String DEF_FG_COLOR = _props.getDefaultFgColor();
+	private static boolean firstWordMatch = _props.isMatchFirstWord();
 
 
 	private transient String _tmpKey;
@@ -126,7 +129,9 @@ public class LineFormatter
 			{
 				_tmpLogClr = _keysToColors.get(_tmpKey);
 				_tmpFileClr = _keysToFileColors.get(_tmpKey);
-				break;
+
+				if (firstWordMatch)
+					break;
 			}
 		}
 

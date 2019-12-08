@@ -21,6 +21,8 @@
     <skipAheadInBytes>1000</skipAheadInBytes>
 
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+    
+    <matchFirstWord>true</matchFirstWord>
   </execution>
 
 

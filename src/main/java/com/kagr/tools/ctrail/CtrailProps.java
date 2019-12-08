@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
 
@@ -52,12 +53,14 @@ public class CtrailProps
 	@Getter @Setter private boolean _lineSearchCaseSensitiveMatching = false;
 	@Getter @Setter private boolean _prependFilenameToLine = true;
 	@Getter @Setter private boolean _blankLineOnFileChange = false;
+	@Getter @Setter private boolean _matchFirstWord = true;
 
 
 	@Getter @Setter private String _defaultFgColor = "white";
 	@Getter @Setter private String _defaultFlColor = "";
 	@Getter private Hashtable<String, String> _keysToColors;
 	@Getter private Hashtable<String, String> _keysToFileColors;
+	@Getter private LinkedList<String> _keys;
 
 
 
@@ -84,6 +87,7 @@ public class CtrailProps
 	{
 		_keysToColors = new Hashtable<>();
 		_keysToFileColors = new Hashtable<>();
+		_keys = new LinkedList<>();
 		String propsFileName = getConfigFile();
 		Parameters params = new Parameters();
 		FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<XMLConfiguration>(XMLConfiguration.class).configure(params.xml()
@@ -102,9 +106,10 @@ public class CtrailProps
 			setSkipAheadInBytes(config.getInt("execution.skipAheadInBytes", _skipAheadInBytes));
 			setPrependFilenameToLine(config.getBoolean("execution.prependFilenameToLine", _prependFilenameToLine));
 			setNoChangeSleepTimeMillis(config.getInt("execution.noChangeSleepTimeMillis", _noChangeSleepTimeMillis));
-			setLineSearchCaseSensitiveMatching(config.getBoolean("coloring.useCaseSensitiveSarch", _lineSearchCaseSensitiveMatching));
+			setLineSearchCaseSensitiveMatching(config.getBoolean("execution.useCaseSensitiveSarch", _lineSearchCaseSensitiveMatching));
 			setBlankLineOnFileChange(config.getBoolean("coloring.filename.blankLineOnFileChange", _blankLineOnFileChange));
 			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
+			setMatchFirstWord(config.getBoolean("execution.matchFirstWord", _matchFirstWord));
 
 
 			int lineColorCfgSz = 0;
@@ -118,43 +123,47 @@ public class CtrailProps
 			}
 
 			String key = "";
+			String origfgcolor = "";
 			String fgcolor = "";
+			String origflcolor = "";
 			String flcolor = "";
 			for (int i = 0; i < lineColorCfgSz; i++)
 			{
 				try
 				{
 					key = config.getString("coloring.linecolors.colorpair(" + i + ").keyword");
-					fgcolor = config.getString("coloring.linecolors.colorpair(" + i + ").fgcolor");
-					flcolor = config.getString("coloring.linecolors.colorpair(" + i + ").flcolor", "");
+					origfgcolor = config.getString("coloring.linecolors.colorpair(" + i + ").fgcolor");
+					origflcolor = config.getString("coloring.linecolors.colorpair(" + i + ").flcolor", "");
 
-					fgcolor = getColorCode(fgcolor);
-					flcolor = getColorCode(flcolor);
+					fgcolor = getColorCode(origfgcolor);
+					flcolor = getColorCode(origflcolor);
 
 					if (isLineSearchCaseSensitiveMatching())
 					{
+						_keys.add(key);
 						if (!StringUtils.isEmpty(fgcolor))
 						{
 							_keysToColors.put(key, fgcolor);
-							_logger.trace("added FG:{}={}", key, fgcolor);
+							_logger.trace("added FG:{}={}", key, origfgcolor);
 						}
 						if (!StringUtils.isEmpty(flcolor))
 						{
 							_keysToFileColors.put(key, flcolor);
-							_logger.trace("added FL:{}={}", key, flcolor);
+							_logger.trace("added FL:{}={}", key, origflcolor);
 						}
 					}
 					else
 					{
+						_keys.add(key.toLowerCase());
 						if (!StringUtils.isEmpty(fgcolor))
 						{
 							_keysToColors.put(key.toLowerCase(), fgcolor);
-							_logger.trace("added FG:{}={}", key.toLowerCase(), fgcolor);
+							_logger.trace("added FG:{}={}", key.toLowerCase(), origfgcolor);
 						}
 						if (!StringUtils.isEmpty(flcolor))
 						{
 							_keysToFileColors.put(key.toLowerCase(), flcolor);
-							_logger.trace("added FL:{}={}", key.toLowerCase(), flcolor);
+							_logger.trace("added FL:{}={}", key.toLowerCase(), origflcolor);
 						}
 					}
 				}

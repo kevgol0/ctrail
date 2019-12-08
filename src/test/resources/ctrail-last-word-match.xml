@@ -14,7 +14,7 @@
     <!-- indicates max number of outbound lines not yet written to output -->
     <maxPendingLines>100000</maxPendingLines>
 
-    <prependFilenameToLine>false</prependFilenameToLine>
+    <prependFilenameToLine>true</prependFilenameToLine>
 
     <skipAheadInBytes>1000</skipAheadInBytes>
 
@@ -22,16 +22,15 @@
 
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
     
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+
     <matchFirstWord>false</matchFirstWord>
-    
-    <matchFirstWord>true</matchFirstWord>
   </execution>
 
 
   <coloring>
     <!-- case sensitivity -->
-    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
-
+    
     <filename>
       <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
@@ -49,8 +48,8 @@
         GREEN
         RED
         WHITE
-        YELLOW 
-        
+        YELLOW
+
         BLACK_UNDERLINED
         BLUE_UNDERLINED
         CYAN_UNDERLINED
@@ -58,9 +57,9 @@
         GREEN_UNDERLINED
         RED_UNDERLINED
         WHITE_UNDERLINED
-        YELLOW_UNDERLINED 
-        
-        -->
+        YELLOW_UNDERLINED
+
+      -->
 
       <defaultFgColor>white</defaultFgColor>
 
@@ -97,6 +96,11 @@
       <colorpair>
         <keyword>(CFG)</keyword>
         <fgcolor>cyan</fgcolor>
+      </colorpair>
+
+      <colorpair>
+        <keyword>errors</keyword>
+        <fgcolor>green</fgcolor>
       </colorpair>
 
     </linecolors>

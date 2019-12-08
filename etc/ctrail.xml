@@ -19,6 +19,12 @@
     <skipAheadInBytes>1000</skipAheadInBytes>
 
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+
+    <!-- indicates if the search should exit after if finds the FIRST word...
+      if set to false, it will match the LAST word found that matches the list
+      of words specified in the coloring seciont; this means, the ORDER in
+      which words are added to the below list matters for your line matching -->
+    <matchFirstWord>false</matchFirstWord>
   </execution>
 
 
