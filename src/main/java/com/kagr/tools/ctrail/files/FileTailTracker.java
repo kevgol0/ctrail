@@ -62,7 +62,11 @@ public class FileTailTracker
 				return;
 
 			if (_file.length() > CtrailProps.getInstance().getSkipAheadInBytes())
-				_lastReadPosition = _file.length() - CtrailProps.getInstance().getSkipAheadInBytes();
+			{
+				long advacneBy = _file.length() - CtrailProps.getInstance().getSkipAheadInBytes();
+				_logger.trace("advancing file:{} to position:{}, size:{}", _fileName, advacneBy, _file.length());
+				_lastReadPosition = advacneBy;
+			}
 			_file.seek(_lastReadPosition);
 		}
 		catch (IOException ex_)

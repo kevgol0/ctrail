@@ -10,7 +10,7 @@
   <logger name="org.apache" level="OFF" additive="false" />
   <logger name="org.apache.commons" level="OFF" additive="false" />
 
-  <root level="info">
+  <root level="TRACE">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

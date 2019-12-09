@@ -13,4 +13,5 @@ if [ ! -e $LIB ] ; then
     exit 1
 fi
 
-exec $jvm -cp /usr/local/lib/ctrail.jar -Xms128m -Xmx256m com.kagr.tools.ctrail.CtrailEntryPoint $*
+#exec $jvm -cp /usr/local/lib/ctrail.jar -jar -Xms128m -Xmx256m com.kagr.tools.ctrail.CtrailEntryPoint $*
+exec $jvm -jar /usr/local/lib/ctrail.jar $*
