@@ -118,8 +118,9 @@ public class CtrailProps
 				lineColorCfgSz = ((Collection<?>) config.getProperty("coloring.linecolors.colorpair.keyword")).size();
 				_logger.trace("total number of line colors found:{}", lineColorCfgSz);
 			}
-			catch (Exception ex_1)
+			catch (Exception ex_)
 			{
+				_logger.error(ex_.toString(), ex_);
 			}
 
 			String key = "";
