@@ -23,6 +23,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -165,6 +166,7 @@ public class CtrailEntryPoint
 		options.addOption(Option.builder("m").longOpt("match").hasArg().argName("STR")
 				.desc("only show lines that match STR")
 				.build());
+		options.addOption(Option.builder("h").longOpt("help").desc("print command line directives").build());
 
 		try
 		{
@@ -174,8 +176,14 @@ public class CtrailEntryPoint
 				CtrailProps.getInstance().setSkipAheadInBytes(0);
 			if (line.hasOption("m"))
 				_matchpattern = line.getOptionValue("m");
+
+
 			if (line.hasOption("h"))
-				System.out.println("");
+			{
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp("ctr", options);
+				System.exit(1);
+			}
 
 			return line.getArgs();
 		}
