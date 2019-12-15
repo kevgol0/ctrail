@@ -1,6 +1,6 @@
 #!/bin/bash
-FILE=ctrail-0.0.5.jar
-aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE --profile AlertnestEC2InstancesRole
+FILE=ctrail-0.0.6.jar
+aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE
 sudo mv /tmp/$FILE /usr/local/lib
 
 if [ -e /usr/local/lib/ctrail.jar ] ; then
@@ -9,7 +9,7 @@ fi
 sudo ln -s /usr/local/lib/$FILE /usr/local/lib/ctrail.jar
 
 FILE=ctrail.xml
-aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE --profile AlertnestEC2InstancesRole
+aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE
 if [ ! -e /ec/$FILE ] ; then 
     sudo mv /tmp/$FILE /etc/$FILE
 else
@@ -18,7 +18,7 @@ fi
 
 
 FILE=ctr
-aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE --profile AlertnestEC2InstancesRole
+aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE
 sudo mv /tmp/$FILE /usr/local/bin
 chmod +x /usr/local/bin/ctr
 

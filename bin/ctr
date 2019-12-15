@@ -14,4 +14,4 @@ if [ ! -e $LIB ] ; then
 fi
 
 #exec $jvm -cp /usr/local/lib/ctrail.jar -jar -Xms128m -Xmx256m com.kagr.tools.ctrail.CtrailEntryPoint $*
-exec $jvm -jar /usr/local/lib/ctrail.jar $*
+exec $jvm -Xmx64m -jar /usr/local/lib/ctrail.jar $*
