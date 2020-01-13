@@ -107,4 +107,24 @@
     </linecolors>
   </coloring>
 
+  <!-- this allows you to specify specific keywords of interest
+    from specific files...
+  -->
+  <filtering>
+    <enabled>true</enabled>
+    <filefilter>
+      <filename>user-mgr.log.0</filename>
+      <keyword>a</keyword>
+      <keyword>b</keyword>
+      <keyword>c</keyword>
+    </filefilter>
+    
+    <filefilter>
+      <filename>user-mgr.log.0</filename>
+      <keyword>a</keyword>
+      <keyword>b</keyword>
+      <keyword>c</keyword>
+    </filefilter>
+  </filtering>
+
 </ctrail>

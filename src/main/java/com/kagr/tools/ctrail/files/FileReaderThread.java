@@ -19,7 +19,8 @@ import java.util.concurrent.BlockingDeque;
 
 
 
-import com.kagr.tools.ctrail.CtrailProps;
+import com.kagr.tools.ctrail.props.CtrailProps;
+import com.kagr.tools.ctrail.props.FileSearchFilter;
 import com.kagr.tools.ctrail.unit.LogLine;
 
 
@@ -38,8 +39,10 @@ public class FileReaderThread implements Runnable
 {
 	@Getter @Setter(AccessLevel.PRIVATE) private BlockingDeque<FileTailTracker> _fileTrackers;
 	@Getter @Setter(AccessLevel.PRIVATE) private Deque<LogLine> _output;
-	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
 	@Getter @Setter private int _maxLinesPerThread;
+
+	// command line matching
+	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
 
 	private CtrailProps _props;
 
@@ -96,7 +99,7 @@ public class FileReaderThread implements Runnable
 
 
 					if (_props.isBlankLineOnFileChange())
-						_output.add(new LogLine(""));
+						_output.add(new LogLine(null, "", null));
 				}
 				else
 				{
@@ -155,13 +158,18 @@ public class FileReaderThread implements Runnable
 				continue;
 			}
 
+			if (shouldExcludeLineDueToSeachTerms(line, tracker_.getFileSearchFilter()))
+			{
+				continue;
+			}
+
 			if (_props.isPrependFilenameToLine())
 			{
-				_output.add(new LogLine(tracker_.getFileName(), line));
+				_output.add(new LogLine(tracker_.getFileName(), line, tracker_.getFileSearchFilter()));
 			}
 			else
 			{
-				_output.add(new LogLine(line));
+				_output.add(new LogLine(null, line, tracker_.getFileSearchFilter()));
 			}
 			readPos = tracker_.getFile().getFilePointer();
 			tracker_.setLastReadPosition(readPos);
@@ -174,6 +182,29 @@ public class FileReaderThread implements Runnable
 			}
 		}
 		return nReadLines;
+	}
+
+
+
+
+
+	private boolean shouldExcludeLineDueToSeachTerms(String line_, FileSearchFilter fileSearchTerms_)
+	{
+		//
+		// see if this file has FileSearchTerms specified
+		//
+		if (fileSearchTerms_ != null)
+		{
+			for (int i = 0; i < fileSearchTerms_.size(); i++)
+			{
+				if (line_.contains(fileSearchTerms_.get(i)))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 

@@ -21,7 +21,7 @@
     <skipAheadInBytes>1000</skipAheadInBytes>
 
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
-    
+
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <matchFirstWord>false</matchFirstWord>
@@ -30,7 +30,7 @@
 
   <coloring>
     <!-- case sensitivity -->
-    
+
     <filename>
       <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
@@ -106,4 +106,20 @@
     </linecolors>
   </coloring>
 
+
+  <filtering>
+    <filefilter>
+      <filename>user-mgr.log.0</filename>
+      <keyword>a</keyword>
+      <keyword>b</keyword>
+      <keyword>c</keyword>
+    </filefilter>
+    
+    <filefilter>
+      <filename>user-mgr.log.0</filename>
+      <keyword>a</keyword>
+      <keyword>b</keyword>
+      <keyword>c</keyword>
+    </filefilter>
+  </filtering>
 </ctrail>

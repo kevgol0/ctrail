@@ -22,7 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 
 
 
-import com.kagr.tools.ctrail.CtrailProps;
+import com.kagr.tools.ctrail.props.CtrailProps;
+import com.kagr.tools.ctrail.props.FileSearchFilter;
 
 
 
@@ -42,6 +43,8 @@ public class FileTailTracker
 	@Getter @Setter private long _lastReadPosition;
 
 	@Getter private String _fileName;
+
+	@Getter FileSearchFilter _fileSearchFilter;
 
 
 
@@ -75,4 +78,19 @@ public class FileTailTracker
 		}
 	}
 
+
+
+
+
+	public void setFileSearchTerms(FileSearchFilter fst_)
+	{
+		if (CtrailProps.getInstance().isEnableFileSearchTerms())
+		{
+			_fileSearchFilter = fst_;
+		}
+		else
+		{
+			_logger.debug("file serach terms disabled, not setting:{}", fst_.toString());
+		}
+	}
 }

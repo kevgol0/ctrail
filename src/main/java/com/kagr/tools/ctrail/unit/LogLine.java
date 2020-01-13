@@ -13,7 +13,10 @@ package com.kagr.tools.ctrail.unit;
 
 
 
-import lombok.AllArgsConstructor;
+import com.kagr.tools.ctrail.props.FileSearchFilter;
+
+
+
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +27,23 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-@AllArgsConstructor
 public class LogLine
 {
-	private String _origFilename;
+	@NonNull private String _origFilename;
 
 	@NonNull private String _line;
+
+	private FileSearchFilter _fileSearchFilters;
+
+
+
+
+
+	public LogLine(String origFileName_, String line_, FileSearchFilter fst_)
+	{
+		setOrigFilename(origFileName_);
+		setLine(line_);
+		setFileSearchFilters(fst_);
+	}
 
 }

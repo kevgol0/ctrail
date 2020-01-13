@@ -7,7 +7,7 @@
 
 
 
-package com.kagr.tools.ctrail;
+package com.kagr.tools.ctrail.props;
 
 
 
@@ -18,16 +18,25 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 
 
+import org.apache.commons.configuration2.HierarchicalConfiguration;
+import org.apache.commons.configuration2.ImmutableConfiguration;
 import org.apache.commons.configuration2.XMLConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
+import org.apache.commons.configuration2.tree.ImmutableNode;
 import org.apache.commons.lang3.StringUtils;
+
+
+
+import com.kagr.tools.ctrail.ConsoleColors;
 
 
 
@@ -54,12 +63,14 @@ public class CtrailProps
 	@Getter @Setter private boolean _prependFilenameToLine = true;
 	@Getter @Setter private boolean _blankLineOnFileChange = false;
 	@Getter @Setter private boolean _matchFirstWord = true;
+	@Getter @Setter private boolean _enableFileSearchTerms = true;
 
 
 	@Getter @Setter private String _defaultFgColor = "white";
 	@Getter @Setter private String _defaultFlColor = "";
 	@Getter private Hashtable<String, String> _keysToColors;
 	@Getter private Hashtable<String, String> _keysToFileColors;
+	@Getter private Hashtable<String, FileSearchFilter> _fileSearchFilters;
 	@Getter private LinkedList<String> _keys;
 
 
@@ -87,6 +98,7 @@ public class CtrailProps
 	{
 		_keysToColors = new Hashtable<>();
 		_keysToFileColors = new Hashtable<>();
+		_fileSearchFilters = new Hashtable<>();
 		_keys = new LinkedList<>();
 		String propsFileName = getConfigFile();
 		Parameters params = new Parameters();
@@ -110,81 +122,142 @@ public class CtrailProps
 			setBlankLineOnFileChange(config.getBoolean("coloring.filename.blankLineOnFileChange", _blankLineOnFileChange));
 			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
 			setMatchFirstWord(config.getBoolean("execution.matchFirstWord", _matchFirstWord));
+			setEnableFileSearchTerms(config.getBoolean("filtering.enabled", _enableFileSearchTerms));
 
+			initColoring(config);
+			initFiltering(config);
 
-			int lineColorCfgSz = 0;
-			try
-			{
-				lineColorCfgSz = ((Collection<?>) config.getProperty("coloring.linecolors.colorpair.keyword")).size();
-				_logger.trace("total number of line colors found:{}", lineColorCfgSz);
-			}
-			catch (Exception ex_)
-			{
-				_logger.error(ex_.toString(), ex_);
-			}
-
-			String key = "";
-			String origfgcolor = "";
-			String fgcolor = "";
-			String origflcolor = "";
-			String flcolor = "";
-			for (int i = 0; i < lineColorCfgSz; i++)
-			{
-				try
-				{
-					key = config.getString("coloring.linecolors.colorpair(" + i + ").keyword");
-					origfgcolor = config.getString("coloring.linecolors.colorpair(" + i + ").fgcolor");
-					origflcolor = config.getString("coloring.linecolors.colorpair(" + i + ").flcolor", "");
-
-					fgcolor = getColorCode(origfgcolor);
-					flcolor = getColorCode(origflcolor);
-
-					if (isLineSearchCaseSensitiveMatching())
-					{
-						_keys.add(key);
-						if (!StringUtils.isEmpty(fgcolor))
-						{
-							_keysToColors.put(key, fgcolor);
-							_logger.trace("added FG:{}={}", key, origfgcolor);
-						}
-						if (!StringUtils.isEmpty(flcolor))
-						{
-							_keysToFileColors.put(key, flcolor);
-							_logger.trace("added FL:{}={}", key, origflcolor);
-						}
-					}
-					else
-					{
-						_keys.add(key.toLowerCase());
-						if (!StringUtils.isEmpty(fgcolor))
-						{
-							_keysToColors.put(key.toLowerCase(), fgcolor);
-							_logger.trace("added FG:{}={}", key.toLowerCase(), origfgcolor);
-						}
-						if (!StringUtils.isEmpty(flcolor))
-						{
-							_keysToFileColors.put(key.toLowerCase(), flcolor);
-							_logger.trace("added FL:{}={}", key.toLowerCase(), origflcolor);
-						}
-					}
-				}
-				catch (IllegalArgumentException ex_)
-				{
-					_logger.error("error for key:%s, bad value:%s; ignoring...", key, fgcolor);
-				}
-				catch (NoSuchElementException ex_)
-				{
-					if (ex_.toString().contains(".keyword"))
-						break;
-					else
-						_logger.error(ex_.toString());
-					break;
-				}
-			}
 		}
 		catch (Exception ex_)
 		{
 			_logger.error(ex_.toString());
+		}
+	}
+
+
+
+
+
+	private void initFiltering(XMLConfiguration config_)
+	{
+		int filterCfgSz = 0;
+		try
+		{
+			filterCfgSz = ((Collection<?>) config_.getProperty("filtering.filefilter.filename")).size();
+			_logger.trace("total number of line colors found:{}", filterCfgSz);
+		}
+		catch (Exception ex_)
+		{
+			_logger.error(ex_.toString(), ex_);
+		}
+
+		FileSearchFilter fst;
+		String fname = "";
+		int filterTermsSz = 0;
+		for (int i = 0; i < filterCfgSz; i++)
+		{
+			try
+			{
+				fname = config_.getString("filtering.filefilter(" + i + ").filename");
+				filterTermsSz = ((Collection<?>) config_.getProperty("filtering.filefilter(" + i + ").keyword")).size();
+				fst = new FileSearchFilter(fname);
+				for (int j = 0; j < filterTermsSz; j++)
+				{
+					fst.add(config_.getString("filtering.filefilter(" + i + ").keyword(" + j + ")"));
+				}
+
+				_logger.debug("loaded file search term:{}", fst.toString());
+				_fileSearchFilters.put(fst.getFileName(), fst);
+			}
+			catch (IllegalArgumentException ex_)
+			{
+				_logger.error("error for key:{}, bad value:{}", fname);
+			}
+			catch (NoSuchElementException ex_)
+			{
+				if (ex_.toString().contains(".keyword"))
+					break;
+				else
+					_logger.error(ex_.toString());
+				break;
+			}
+		}
+	}
+
+
+
+
+
+	private void initColoring(XMLConfiguration config_)
+	{
+		int lineColorCfgSz = 0;
+		try
+		{
+			lineColorCfgSz = ((Collection<?>) config_.getProperty("coloring.linecolors.colorpair.keyword")).size();
+			_logger.trace("total number of line colors found:{}", lineColorCfgSz);
+		}
+		catch (Exception ex_)
+		{
+			_logger.error(ex_.toString(), ex_);
+		}
+
+		String key = "";
+		String origfgcolor = "";
+		String fgcolor = "";
+		String origflcolor = "";
+		String flcolor = "";
+		for (int i = 0; i < lineColorCfgSz; i++)
+		{
+			try
+			{
+				key = config_.getString("coloring.linecolors.colorpair(" + i + ").keyword");
+				origfgcolor = config_.getString("coloring.linecolors.colorpair(" + i + ").fgcolor");
+				origflcolor = config_.getString("coloring.linecolors.colorpair(" + i + ").flcolor", "");
+
+				fgcolor = getColorCode(origfgcolor);
+				flcolor = getColorCode(origflcolor);
+
+				if (isLineSearchCaseSensitiveMatching())
+				{
+					_keys.add(key);
+					if (!StringUtils.isEmpty(fgcolor))
+					{
+						_keysToColors.put(key, fgcolor);
+						_logger.trace("added FG:{}={}", key, origfgcolor);
+					}
+					if (!StringUtils.isEmpty(flcolor))
+					{
+						_keysToFileColors.put(key, flcolor);
+						_logger.trace("added FL:{}={}", key, origflcolor);
+					}
+				}
+				else
+				{
+					_keys.add(key.toLowerCase());
+					if (!StringUtils.isEmpty(fgcolor))
+					{
+						_keysToColors.put(key.toLowerCase(), fgcolor);
+						_logger.trace("added FG:{}={}", key.toLowerCase(), origfgcolor);
+					}
+					if (!StringUtils.isEmpty(flcolor))
+					{
+						_keysToFileColors.put(key.toLowerCase(), flcolor);
+						_logger.trace("added FL:{}={}", key.toLowerCase(), origflcolor);
+					}
+				}
+			}
+			catch (IllegalArgumentException ex_)
+			{
+				_logger.error("error for key:{}, bad value:{}; ignoring...", key, fgcolor);
+			}
+			catch (NoSuchElementException ex_)
+			{
+				if (ex_.toString().contains(".keyword"))
+					break;
+				else
+					_logger.error(ex_.toString());
+				break;
+			}
 		}
 	}
 

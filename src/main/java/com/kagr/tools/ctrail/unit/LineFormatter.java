@@ -24,7 +24,8 @@ import org.apache.commons.lang3.StringUtils;
 
 
 import com.kagr.tools.ctrail.ConsoleColors;
-import com.kagr.tools.ctrail.CtrailProps;
+import com.kagr.tools.ctrail.props.CtrailProps;
+import com.kagr.tools.ctrail.props.FileSearchFilter;
 
 
 
@@ -38,10 +39,11 @@ public class LineFormatter
 	private static CtrailProps _props = CtrailProps.getInstance();
 	private static Hashtable<String, String> _keysToColors = _props.getKeysToColors();
 	private static Hashtable<String, String> _keysToFileColors = _props.getKeysToFileColors();
-	
-	private static List<String> _keys =_props.getKeys();
+
+
+	private static List<String> _keys = _props.getKeys();
 	private static int _keysSz = _keys.size();
-	
+
 	private static final String DEF_FG_COLOR = _props.getDefaultFgColor();
 	private static boolean firstWordMatch = _props.isMatchFirstWord();
 
@@ -51,46 +53,6 @@ public class LineFormatter
 	private transient String _tmpStr;
 	private transient String _tmpLogClr;
 	private transient String _tmpFileClr;
-
-
-
-
-
-	public String format(String str_)
-	{
-		if (str_ == null) return str_;
-		_tmpRslt = null;
-		_tmpKey = null;
-		_tmpLogClr = null;
-		for (int i = 0; i < _keysSz; i++)
-		{
-			_tmpKey = _keys.get(i);
-
-			if (_props.isLineSearchCaseSensitiveMatching())
-			{
-				_tmpStr = str_;
-			}
-			else
-			{
-				_tmpKey = _tmpKey.toLowerCase();
-				_tmpStr = str_.toLowerCase();
-			}
-
-			if (_tmpStr.contains(_tmpKey))
-			{
-				_tmpLogClr = _keysToColors.get(_tmpKey);
-				break;
-			}
-		}
-
-
-		if (_tmpLogClr == null)
-			_tmpRslt = DEF_FG_COLOR + str_ + _reset;
-		else
-			_tmpRslt = _tmpLogClr + str_ + _reset;
-
-		return _tmpRslt;
-	}
 
 
 
@@ -109,6 +71,7 @@ public class LineFormatter
 		_tmpLogClr = null;
 		_tmpFileClr = null;
 
+
 		if (_props.isLineSearchCaseSensitiveMatching())
 		{
 			_tmpStr = line_.getLine();
@@ -122,6 +85,10 @@ public class LineFormatter
 		}
 
 
+
+		//
+		// find line colors
+		//
 		for (int i = 0; i < _keysSz; i++)
 		{
 			_tmpKey = _keys.get(i);

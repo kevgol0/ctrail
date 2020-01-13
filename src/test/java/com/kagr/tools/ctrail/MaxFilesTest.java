@@ -26,6 +26,10 @@ import org.junit.Test;
 
 
 
+import com.kagr.tools.ctrail.props.CtrailProps;
+
+
+
 
 
 public class MaxFilesTest

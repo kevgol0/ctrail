@@ -15,6 +15,7 @@ package com.kagr.tools.ctrail;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.util.Hashtable;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -34,6 +35,8 @@ import com.kagr.tools.ctrail.files.FileReaderThread;
 import com.kagr.tools.ctrail.files.FileTailTracker;
 import com.kagr.tools.ctrail.files.StdinReaderThread;
 import com.kagr.tools.ctrail.files.StdoutWriterThread;
+import com.kagr.tools.ctrail.props.CtrailProps;
+import com.kagr.tools.ctrail.props.FileSearchFilter;
 import com.kagr.tools.ctrail.unit.LogLine;
 
 
@@ -93,6 +96,7 @@ public class CtrailEntryPoint
 		{
 			_reader = new Thread(new FileReaderThread(_fileTrackers, _output, _matchpattern));
 		}
+
 		_reader.start();
 	}
 
@@ -113,6 +117,7 @@ public class CtrailEntryPoint
 	private BlockingDeque<FileTailTracker> getFilesFromArgs(String[] args_)
 	{
 		int maxFileCnt = CtrailProps.getInstance().getMaxNbrInputFiles();
+		Hashtable<String, FileSearchFilter> fstMap = CtrailProps.getInstance().getFileSearchFilters();
 		LinkedBlockingDeque<FileTailTracker> deq = new LinkedBlockingDeque<>(maxFileCnt);
 		int cntr = 0;
 		File file;
@@ -134,7 +139,9 @@ public class CtrailEntryPoint
 					break;
 				}
 
-				deq.add(new FileTailTracker(s, new RandomAccessFile(file, "r")));
+				FileTailTracker ftracker = new FileTailTracker(s, new RandomAccessFile(file, "r"));
+				ftracker.setFileSearchTerms(fstMap.get(s)); // if not found, null is the correct value
+				deq.add(ftracker);
 			}
 			catch (Exception ex_)
 			{
@@ -166,7 +173,9 @@ public class CtrailEntryPoint
 		options.addOption(Option.builder("m").longOpt("match").hasArg().argName("STR")
 				.desc("only show lines that match STR")
 				.build());
+		options.addOption(Option.builder("f").longOpt("filters").hasArg().desc("overrides config for file-filtering; <arg=true|false>").build());
 		options.addOption(Option.builder("h").longOpt("help").desc("print command line directives").build());
+
 
 		try
 		{
@@ -176,7 +185,8 @@ public class CtrailEntryPoint
 				CtrailProps.getInstance().setSkipAheadInBytes(0);
 			if (line.hasOption("m"))
 				_matchpattern = line.getOptionValue("m");
-
+			if (line.hasOption("f"))
+				CtrailProps.getInstance().setEnableFileSearchTerms(Boolean.parseBoolean(line.getOptionValue("f")));
 
 			if (line.hasOption("h"))
 			{
@@ -184,6 +194,7 @@ public class CtrailEntryPoint
 				formatter.printHelp("ctr", options);
 				System.exit(1);
 			}
+
 
 			return line.getArgs();
 		}
