@@ -93,4 +93,15 @@ public class FileTailTracker
 			_logger.debug("file serach terms disabled, not setting:{}", fst_.toString());
 		}
 	}
+
+
+
+
+
+	@Override
+	public String toString()
+	{
+		return _fileName;
+	}
+
 }

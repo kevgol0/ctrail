@@ -199,11 +199,30 @@ public class FileReaderThread implements Runnable
 			{
 				if (line_.contains(fileSearchTerms_.get(i)))
 				{
-					return true;
+					//
+					// this file has a filter set, and i 
+					// found a search term specified
+					// so, I want to INCLUDE this line
+					//
+					return false;
 				}
 			}
+
+
+			//
+			// this file has a filter set, and i 
+			// did not find any of the terms specified
+			// so, I want to EXCLUDE this line
+			//
+			return true;
 		}
 
+
+
+		//
+		// no search term associated with this line,
+		// i want to INCLUDE it
+		//
 		return false;
 	}
 

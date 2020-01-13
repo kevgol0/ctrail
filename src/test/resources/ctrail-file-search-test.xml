@@ -106,4 +106,20 @@
     </linecolors>
   </coloring>
 
+
+  <filtering>
+    <enabled>true</enabled>
+    
+    <filefilter>
+      <filename>test.log</filename>
+      <keyword>log1a</keyword>
+      <keyword>log1b</keyword>
+    </filefilter>
+    
+    <filefilter>
+      <filename>test2.log</filename>
+      <keyword>log2a</keyword>
+      <keyword>log2b</keyword>
+    </filefilter>
+  </filtering>
 </ctrail>

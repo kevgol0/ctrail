@@ -16,6 +16,7 @@ package com.kagr.tools.ctrail;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -140,7 +141,7 @@ public class CtrailEntryPoint
 				}
 
 				FileTailTracker ftracker = new FileTailTracker(s, new RandomAccessFile(file, "r"));
-				ftracker.setFileSearchTerms(fstMap.get(s)); // if not found, null is the correct value
+				findAndSetFileTracker(fstMap, s, ftracker);
 				deq.add(ftracker);
 			}
 			catch (Exception ex_)
@@ -149,6 +150,26 @@ public class CtrailEntryPoint
 			}
 		}
 		return deq;
+	}
+
+
+
+
+
+	private void findAndSetFileTracker(Hashtable<String, FileSearchFilter> fstMap_, String fileName_, FileTailTracker ftracker_)
+	{
+		FileSearchFilter fst;
+		Iterator<String> itr = fstMap_.keySet().iterator();
+		while (itr.hasNext())
+		{
+			fst = fstMap_.get(itr.next());
+			if (fst.doesMatchFilename(fileName_))
+			{
+				ftracker_.setFileSearchTerms(fst);
+				_logger.debug("file:{} matches file-name in tracker:{}, setting a filter on this tracker",
+						fst.getFileName(), ftracker_);
+			}
+		}
 	}
 
 
