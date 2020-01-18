@@ -13,6 +13,10 @@ package com.kagr.tools.ctrail.props;
 
 
 
+import static java.text.MessageFormat.format;
+
+
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,13 +29,12 @@ import java.util.NoSuchElementException;
 
 
 
-import org.apache.commons.configuration2.HierarchicalConfiguration;
 import org.apache.commons.configuration2.ImmutableConfiguration;
+import org.apache.commons.configuration2.ImmutableHierarchicalConfiguration;
 import org.apache.commons.configuration2.XMLConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
-import org.apache.commons.configuration2.tree.ImmutableNode;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -63,7 +66,7 @@ public class CtrailProps
 	@Getter @Setter private boolean _prependFilenameToLine = true;
 	@Getter @Setter private boolean _blankLineOnFileChange = false;
 	@Getter @Setter private boolean _matchFirstWord = true;
-	@Getter @Setter private boolean _enableFileSearchTerms = true;
+	@Getter @Setter private boolean _enabledFileFiltering = true;
 
 
 	@Getter @Setter private String _defaultFgColor = "white";
@@ -102,6 +105,7 @@ public class CtrailProps
 		_keys = new LinkedList<>();
 		String propsFileName = getConfigFile();
 		Parameters params = new Parameters();
+		_logger.debug("config file: {}", propsFileName);
 		FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<XMLConfiguration>(XMLConfiguration.class).configure(params.xml()
 				.setThrowExceptionOnMissing(true)
 				.setEncoding("UTF-8")
@@ -122,7 +126,7 @@ public class CtrailProps
 			setBlankLineOnFileChange(config.getBoolean("coloring.filename.blankLineOnFileChange", _blankLineOnFileChange));
 			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
 			setMatchFirstWord(config.getBoolean("execution.matchFirstWord", _matchFirstWord));
-			setEnableFileSearchTerms(config.getBoolean("filtering.enabled", _enableFileSearchTerms));
+			setEnabledFileFiltering(config.getBoolean("filtering.enabled", _enabledFileFiltering));
 
 			initColoring(config);
 			initFiltering(config);
@@ -140,6 +144,16 @@ public class CtrailProps
 
 	private void initFiltering(XMLConfiguration config_)
 	{
+		if (config_.immutableChildConfigurationsAt("filtering").size() <= 0)
+		{
+			_logger.trace("'file-filtering' not present in config");
+			return;
+		}
+		else
+		{
+			_logger.trace("'file-filtering' FOUND");
+		}
+
 		int filterCfgSz = 0;
 		try
 		{
@@ -159,7 +173,7 @@ public class CtrailProps
 			try
 			{
 				fname = config_.getString("filtering.filefilter(" + i + ").filename");
-				filterTermsSz = ((Collection<?>) config_.getProperty("filtering.filefilter(" + i + ").keyword")).size();
+				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).keyword", i));
 				fst = new FileSearchFilter(fname);
 				for (int j = 0; j < filterTermsSz; j++)
 				{
@@ -182,6 +196,27 @@ public class CtrailProps
 				break;
 			}
 		}
+	}
+
+
+
+
+
+	private int extractCount(XMLConfiguration config_, String key_)
+	{
+		if (config_.getProperty(key_) != null)
+		{
+			try
+			{
+				return ((Collection<?>) config_.getProperty(key_)).size();
+			}
+			catch (ClassCastException ex_)
+			{
+				return 1;
+			}
+		}
+		return 0;
+
 	}
 
 

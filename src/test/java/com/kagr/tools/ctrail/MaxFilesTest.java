@@ -40,8 +40,8 @@ public class MaxFilesTest
 	{
 		CtrailProps props = CtrailProps.getInstance();
 		props.setMaxNbrInputFiles(1);
-		Path p = Paths.get(".", "src", "test", "resources", "test.log");
-		Path p2 = Paths.get(".", "src", "test", "resources", "test2.log");
+		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
+		Path p2 = Paths.get(".", "src", "test", "resources", "sources", "test2.log");
 		String args[] = new String[]
 		{
 				p.toString(),

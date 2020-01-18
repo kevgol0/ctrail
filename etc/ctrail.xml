@@ -112,6 +112,7 @@
   -->
   <filtering>
     <enabled>true</enabled>
+    
     <filefilter>
       <filename>user-mgr.log.0</filename>
       <keyword>a</keyword>

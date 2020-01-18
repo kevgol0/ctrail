@@ -84,7 +84,7 @@ public class FileTailTracker
 
 	public void setFileSearchTerms(FileSearchFilter fst_)
 	{
-		if (CtrailProps.getInstance().isEnableFileSearchTerms())
+		if (CtrailProps.getInstance().isEnabledFileFiltering())
 		{
 			_fileSearchFilter = fst_;
 		}

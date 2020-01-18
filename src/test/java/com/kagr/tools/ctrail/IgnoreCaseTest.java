@@ -32,9 +32,9 @@ public class IgnoreCaseTest
 	@Test
 	public void testIgnoreCase()
 	{
-		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/ctrail-case-ignore.xml").toString());
+		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/cofigs/ctrail-case-ignore.xml").toString());
 
-		Path p = Paths.get(".", "src", "test", "resources", "test.log");
+		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
 		String args[] = new String[]
 		{
 				p.toString()

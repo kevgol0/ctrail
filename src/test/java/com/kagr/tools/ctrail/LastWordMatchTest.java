@@ -30,8 +30,8 @@ public class LastWordMatchTest
 	@Test
 	public void testWithLastWordMatch()
 	{
-		System.setProperty("CTRAIL_CFG", Paths.get(".", "src", "test", "resources", "ctrail-last-word-match.xml").toString());
-		Path p = Paths.get(".", "src", "test", "resources", "test.log");
+		System.setProperty("CTRAIL_CFG", Paths.get(".", "src", "test", "resources", "configs", "ctrail-last-word-match.xml").toString());
+		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
 		String args[] = new String[]
 		{
 				p.toString(),

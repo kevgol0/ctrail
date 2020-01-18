@@ -18,22 +18,19 @@ import com.kagr.tools.ctrail.props.FileSearchFilter;
 
 
 import lombok.Data;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 
 
 
 
 @Data
-@RequiredArgsConstructor
 public class LogLine
 {
-	@NonNull private String _origFilename;
+	private String _origFilename;
 
-	@NonNull private String _line;
+	private String _line;
 
-	private FileSearchFilter _fileSearchFilters;
+	FileSearchFilter _fileSearchFilters;
 
 
 

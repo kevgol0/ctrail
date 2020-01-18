@@ -34,8 +34,8 @@ import org.apache.commons.cli.ParseException;
 
 import com.kagr.tools.ctrail.files.FileReaderThread;
 import com.kagr.tools.ctrail.files.FileTailTracker;
+import com.kagr.tools.ctrail.files.OutputWriterThread;
 import com.kagr.tools.ctrail.files.StdinReaderThread;
-import com.kagr.tools.ctrail.files.StdoutWriterThread;
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
 import com.kagr.tools.ctrail.unit.LogLine;
@@ -107,10 +107,12 @@ public class CtrailEntryPoint
 
 	private void initWriterThreads()
 	{
-		_writer = new Thread(new StdoutWriterThread(_output));
+		_writer = new Thread(new OutputWriterThread(_output, System.out));
 		_writer.start();
 	}
 
+	
+	
 
 
 
@@ -158,6 +160,9 @@ public class CtrailEntryPoint
 
 	private void findAndSetFileTracker(Hashtable<String, FileSearchFilter> fstMap_, String fileName_, FileTailTracker ftracker_)
 	{
+		if (!CtrailProps.getInstance().isEnabledFileFiltering())
+			return;
+
 		FileSearchFilter fst;
 		Iterator<String> itr = fstMap_.keySet().iterator();
 		while (itr.hasNext())
@@ -207,7 +212,7 @@ public class CtrailEntryPoint
 			if (line.hasOption("m"))
 				_matchpattern = line.getOptionValue("m");
 			if (line.hasOption("f"))
-				CtrailProps.getInstance().setEnableFileSearchTerms(Boolean.parseBoolean(line.getOptionValue("f")));
+				CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("f")));
 
 			if (line.hasOption("h"))
 			{

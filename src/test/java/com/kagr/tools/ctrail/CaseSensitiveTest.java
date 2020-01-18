@@ -30,8 +30,8 @@ public class CaseSensitiveTest
 	@Test
 	public void testWithCaseSensitive()
 	{
-		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/ctrail-case-sensitive.xml").toString());
-		Path p = Paths.get(".", "src", "test", "resources", "test.log");
+		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-case-sensitive.xml").toString());
+		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
 		String args[] = new String[]
 		{
 				p.toString(),
