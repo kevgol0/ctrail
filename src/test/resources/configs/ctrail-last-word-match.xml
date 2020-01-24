@@ -25,8 +25,7 @@
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <matchFirstWord>false</matchFirstWord>
-
-    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+    
   </execution>
 
 
@@ -110,16 +109,17 @@
 
   <filtering>
     <enabled>true</enabled>
+    
+    <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
 
     <filefilter>
-      <filename>user-mgr.log.0</filename>
+      <filename>test.log</filename>
       <includes>
-        <keyword>a</keyword>
-        <keyword>b</keyword>
-        <keyword>c</keyword>
+        <keyword>log1b</keyword>
+        <keyword>log1a</keyword>
       </includes>
       <excludes>
-        <keyword>d</keyword>
+        <keyword>LOG1B</keyword>
       </excludes>
     </filefilter>
 

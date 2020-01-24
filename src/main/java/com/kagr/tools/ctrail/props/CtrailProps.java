@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -128,7 +129,7 @@ public class CtrailProps
 			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
 			setMatchFirstWord(config.getBoolean("execution.matchFirstWord", _matchFirstWord));
 			setEnabledFileFiltering(config.getBoolean("filtering.enabled", _enabledFileFiltering));
-			setFileFilterDefaultsToInclude(config.getBoolean("execution.fileFilterDefaultsToInclude", _fileFilterDefaultsToInclude));
+			setFileFilterDefaultsToInclude(config.getBoolean("filtering.fileFilterDefaultsToInclude", _fileFilterDefaultsToInclude));
 
 			initColoring(config);
 			initFiltering(config);
@@ -169,7 +170,6 @@ public class CtrailProps
 
 		FileSearchFilter fst;
 		String fname = "";
-		boolean inclusive;
 		int filterTermsSz = 0;
 		for (int i = 0; i < filterCfgSz; i++)
 		{
@@ -186,23 +186,31 @@ public class CtrailProps
 				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).includes.keyword", i));
 				List<String> includes = fst.getIncludeTerms();
 				String key;
+				String val;
 				for (int j = 0; j < filterTermsSz; j++)
 				{
-					key = "filtering.filefilter(" + i + ").includes.keyword(" + j + ")";
-					includes.add(config_.getString(key));
+					key = format("filtering.filefilter({0}).includes.keyword({1})", i, j);
+					val = config_.getString(key);
+					if (isDuplicate(val, includes))
+						continue;
+					includes.add(val);
 				}
 
 				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).excludes.keyword", i));
 				List<String> excludes = fst.getExcldueTerms();
 				for (int j = 0; j < filterTermsSz; j++)
 				{
-					excludes.add(config_.getString("filtering.filefilter(" + i + ").excludes.keyword(" + j + ")"));
+					key = format("filtering.filefilter({0}).excludes.keyword({1})", i, j);
+					val = config_.getString(key);
+					if (isDuplicate(val, includes) || isDuplicate(val, excludes))
+						continue;
+					excludes.add(val);
 				}
 
-				_logger.debug("loaded file search term:{}", fst.toString());
-				_logger.trace("include filters:{}", includes.toString());
-				_logger.trace("include excludes:{}", excludes.toString());
+
 				_fileSearchFilters.put(fst.getFileName(), fst);
+				if (_logger.isDebugEnabled())
+					_logger.debug("loaded file search term:{}", fst.toString());
 			}
 			catch (IllegalArgumentException ex_)
 			{
@@ -217,6 +225,26 @@ public class CtrailProps
 				break;
 			}
 		}
+	}
+
+
+
+
+
+	private boolean isDuplicate(String key_, List<String> other_)
+	{
+		Iterator<String> itr = other_.iterator();
+		while (itr.hasNext())
+		{
+			if (StringUtils.equals(itr.next(), key_))
+			{
+				if (_logger.isInfoEnabled())
+					_logger.info("duplicate found:{}", key_);
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 

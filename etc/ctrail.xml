@@ -26,10 +26,6 @@
       which words are added to the below list matters for your line matching -->
     <matchFirstWord>false</matchFirstWord>
 
-    <!-- specifies if a line should be included in the outout,
-      if a is specified, but no search terms matched either the include or
-      the exclude list -->
-    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
   </execution>
 
 
@@ -117,6 +113,12 @@
   -->
   <filtering>
     <enabled>true</enabled>
+
+    <!-- specifies if a line should be included in the outout,
+      if a is specified, but no search terms matched either the include or
+      the exclude list -->
+    <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
+
 
     <filefilter>
       <filename>user-mgr.log.0</filename>

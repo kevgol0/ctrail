@@ -40,7 +40,7 @@ public class FileReaderThread implements Runnable
 	@Getter @Setter(AccessLevel.PRIVATE) private BlockingDeque<FileTailTracker> _fileTrackers;
 	@Getter @Setter(AccessLevel.PRIVATE) private Deque<LogLine> _output;
 	@Getter @Setter private int _maxLinesPerThread;
-	@Getter @Setter private boolean _defLineInclude;
+	@Getter @Setter private boolean _defLineExclude;
 
 	// command line matching
 	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
@@ -58,7 +58,7 @@ public class FileReaderThread implements Runnable
 		setOutput(strOutput_);
 		setMatch(match_);
 		setMaxLinesPerThread(CtrailProps.getInstance().getMaxProcessingLinesPerThread());
-		setDefLineInclude(CtrailProps.getInstance().isFileFilterDefaultsToInclude());
+		setDefLineExclude(!CtrailProps.getInstance().isFileFilterDefaultsToInclude());
 	}
 
 
@@ -229,7 +229,7 @@ public class FileReaderThread implements Runnable
 			// did not find any of the terms specified
 			// in either the include or the exclude list
 			//
-			return _defLineInclude;
+			return _defLineExclude;
 		}
 
 
