@@ -25,6 +25,11 @@
       of words specified in the coloring seciont; this means, the ORDER in
       which words are added to the below list matters for your line matching -->
     <matchFirstWord>false</matchFirstWord>
+
+    <!-- specifies if a line should be included in the outout,
+      if a is specified, but no search terms matched either the include or
+      the exclude list -->
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
   </execution>
 
 
@@ -112,19 +117,26 @@
   -->
   <filtering>
     <enabled>true</enabled>
-    
+
     <filefilter>
       <filename>user-mgr.log.0</filename>
-      <keyword>a</keyword>
-      <keyword>b</keyword>
-      <keyword>c</keyword>
+      <includes>
+        <keyword>a</keyword>
+        <keyword>b</keyword>
+        <keyword>c</keyword>
+      </includes>
+      <excludes>
+        <keyword>d</keyword>
+      </excludes>
     </filefilter>
-    
+
     <filefilter>
-      <filename>user-mgr.log.0</filename>
-      <keyword>a</keyword>
-      <keyword>b</keyword>
-      <keyword>c</keyword>
+      <filename>analytics.log.0</filename>
+      <includes>
+        <keyword>a</keyword>
+        <keyword>b</keyword>
+        <keyword>c</keyword>
+      </includes>
     </filefilter>
   </filtering>
 

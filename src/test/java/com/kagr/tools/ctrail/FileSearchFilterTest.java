@@ -13,12 +13,8 @@ package com.kagr.tools.ctrail;
 
 
 
-import java.io.File;
-import java.io.PrintStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 
 
@@ -34,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
-public class FileSearchFilterTest
+public class FileSearchFilterTest extends StdCtrTest
 {
 
 	@Test
@@ -53,21 +49,12 @@ public class FileSearchFilterTest
 
 		try
 		{
-			File tempFile = File.createTempFile("filter-unit-test", ".tmp");
-			tempFile.deleteOnExit();
-			PrintStream out = new PrintStream(tempFile);
-			PrintStream origOut = System.out;
-			System.setOut(out);
-
+			replaceStdOut();
 			CtrailEntryPoint ep = new CtrailEntryPoint(args);
 			ep.start(10);
-			System.setOut(origOut);
-			out.flush();
+			resetStdOut();
+			Assert.assertTrue(compareFiles(Paths.get("src", "test", "resurces", "expected", "ctrail-file-search-expected-result.log")));
 
-
-			byte[] expected = Files.readAllBytes(Paths.get("./src/test/resources/expected/ctrail-file-search-expected-result.log"));
-			byte[] actual = Files.readAllBytes(tempFile.toPath());
-			Assert.assertTrue(Arrays.equals(expected, actual));
 		}
 		catch (Exception ex_)
 		{

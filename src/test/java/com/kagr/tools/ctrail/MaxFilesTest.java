@@ -13,10 +13,6 @@ package com.kagr.tools.ctrail;
 
 
 
-import static org.junit.Assert.*;
-
-
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 

@@ -23,7 +23,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.Delegate;
 
 
 
@@ -35,7 +34,9 @@ public class FileSearchFilter
 {
 	@NonNull @Getter @Setter private String _fileName;
 
-	@Delegate private List<String> _searchTerms = new LinkedList<String>();
+	@Getter private List<String> _includeTerms = new LinkedList<String>();
+
+	@Getter private List<String> _excldueTerms = new LinkedList<String>();
 
 
 

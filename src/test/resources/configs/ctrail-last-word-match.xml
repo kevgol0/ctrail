@@ -25,6 +25,8 @@
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <matchFirstWord>false</matchFirstWord>
+
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
   </execution>
 
 
@@ -105,5 +107,30 @@
 
     </linecolors>
   </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+
+    <filefilter>
+      <filename>user-mgr.log.0</filename>
+      <includes>
+        <keyword>a</keyword>
+        <keyword>b</keyword>
+        <keyword>c</keyword>
+      </includes>
+      <excludes>
+        <keyword>d</keyword>
+      </excludes>
+    </filefilter>
+
+    <filefilter>
+      <filename>analytics.log.0</filename>
+      <includes>
+        <keyword>a</keyword>
+        <keyword>b</keyword>
+        <keyword>c</keyword>
+      </includes>
+    </filefilter>
+  </filtering>
 
 </ctrail>

@@ -67,6 +67,7 @@ public class CtrailProps
 	@Getter @Setter private boolean _blankLineOnFileChange = false;
 	@Getter @Setter private boolean _matchFirstWord = true;
 	@Getter @Setter private boolean _enabledFileFiltering = true;
+	@Getter @Setter private boolean _fileFilterDefaultsToInclude = true;
 
 
 	@Getter @Setter private String _defaultFgColor = "white";
@@ -127,6 +128,7 @@ public class CtrailProps
 			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
 			setMatchFirstWord(config.getBoolean("execution.matchFirstWord", _matchFirstWord));
 			setEnabledFileFiltering(config.getBoolean("filtering.enabled", _enabledFileFiltering));
+			setFileFilterDefaultsToInclude(config.getBoolean("execution.fileFilterDefaultsToInclude", _fileFilterDefaultsToInclude));
 
 			initColoring(config);
 			initFiltering(config);
@@ -167,20 +169,39 @@ public class CtrailProps
 
 		FileSearchFilter fst;
 		String fname = "";
+		boolean inclusive;
 		int filterTermsSz = 0;
 		for (int i = 0; i < filterCfgSz; i++)
 		{
 			try
 			{
 				fname = config_.getString("filtering.filefilter(" + i + ").filename");
-				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).keyword", i));
+				if (_fileSearchFilters.contains(fname))
+				{
+					_logger.debug("already contains file filter:{}", fname);
+					continue;
+				}
+
 				fst = new FileSearchFilter(fname);
+				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).includes.keyword", i));
+				List<String> includes = fst.getIncludeTerms();
+				String key;
 				for (int j = 0; j < filterTermsSz; j++)
 				{
-					fst.add(config_.getString("filtering.filefilter(" + i + ").keyword(" + j + ")"));
+					key = "filtering.filefilter(" + i + ").includes.keyword(" + j + ")";
+					includes.add(config_.getString(key));
+				}
+
+				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).excludes.keyword", i));
+				List<String> excludes = fst.getExcldueTerms();
+				for (int j = 0; j < filterTermsSz; j++)
+				{
+					excludes.add(config_.getString("filtering.filefilter(" + i + ").excludes.keyword(" + j + ")"));
 				}
 
 				_logger.debug("loaded file search term:{}", fst.toString());
+				_logger.trace("include filters:{}", includes.toString());
+				_logger.trace("include excludes:{}", excludes.toString());
 				_fileSearchFilters.put(fst.getFileName(), fst);
 			}
 			catch (IllegalArgumentException ex_)

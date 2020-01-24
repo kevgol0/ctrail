@@ -1,1 +1,15 @@
-<configuration debug="false"/>
+<configuration debug="true">
+  <logger name="org.apache" level="OFF" additive="false" />
+  <logger name="org.apache.commons" level="OFF" additive="false" />
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <withJansi>false</withJansi>
+    <encoder>
+      <pattern>
+        %d{HH:mm:ss:SSS} [%thread] %-5level - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+  <root level="TRACE">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>

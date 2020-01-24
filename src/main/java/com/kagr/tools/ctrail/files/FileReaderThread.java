@@ -40,6 +40,7 @@ public class FileReaderThread implements Runnable
 	@Getter @Setter(AccessLevel.PRIVATE) private BlockingDeque<FileTailTracker> _fileTrackers;
 	@Getter @Setter(AccessLevel.PRIVATE) private Deque<LogLine> _output;
 	@Getter @Setter private int _maxLinesPerThread;
+	@Getter @Setter private boolean _defLineInclude;
 
 	// command line matching
 	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
@@ -52,10 +53,12 @@ public class FileReaderThread implements Runnable
 
 	public FileReaderThread(BlockingDeque<FileTailTracker> fileTrackers_, Deque<LogLine> strOutput_, String match_)
 	{
+		_props = CtrailProps.getInstance();
 		setFileTrackers(fileTrackers_);
 		setOutput(strOutput_);
-		setMaxLinesPerThread(CtrailProps.getInstance().getMaxProcessingLinesPerThread());
 		setMatch(match_);
+		setMaxLinesPerThread(CtrailProps.getInstance().getMaxProcessingLinesPerThread());
+		setDefLineInclude(CtrailProps.getInstance().isFileFilterDefaultsToInclude());
 	}
 
 
@@ -65,8 +68,6 @@ public class FileReaderThread implements Runnable
 	@Override
 	public void run()
 	{
-		_props = CtrailProps.getInstance();
-
 		long szToRead;
 		FileTailTracker tracker;
 		int nFiles = _fileTrackers.size();
@@ -195,14 +196,28 @@ public class FileReaderThread implements Runnable
 		//
 		if (fileSearchTerms_ != null)
 		{
-			for (int i = 0; i < fileSearchTerms_.size(); i++)
+			for (int i = 0; i < fileSearchTerms_.getExcldueTerms().size(); i++ )
 			{
-				if (line_.contains(fileSearchTerms_.get(i)))
+				if (line_.contains(fileSearchTerms_.getExcldueTerms().get(i)))
 				{
 					//
 					// this file has a filter set, and i 
-					// found a search term specified
-					// so, I want to INCLUDE this line
+					// found a search term specified in the exclude
+					// filter... I want to EXCLUDE this line
+					//
+					return true;
+				}
+			}
+			
+			
+			for (int i = 0; i < fileSearchTerms_.getIncludeTerms().size(); i++ )
+			{
+				if (line_.contains(fileSearchTerms_.getIncludeTerms().get(i)))
+				{
+					//
+					// this file has a filter set, and i 
+					// found a search term specified in the include
+					// filter... I want to INCLUDE this line
 					//
 					return false;
 				}
@@ -210,11 +225,11 @@ public class FileReaderThread implements Runnable
 
 
 			//
-			// this file has a filter set, and i 
+			// this file has a filter set, but i 
 			// did not find any of the terms specified
-			// so, I want to EXCLUDE this line
+			// in either the include or the exclude list
 			//
-			return true;
+			return _defLineInclude;
 		}
 
 
