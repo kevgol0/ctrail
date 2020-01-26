@@ -1,0 +1,10 @@
+(err) errors
+(dbg) debug
+random text
+(DBG) debug
+(inf) this line should appear log2a
+(err) errors
+(ERR) error
+(iNf) info
+(INF) info
+(err) log2b this line should NOT appear

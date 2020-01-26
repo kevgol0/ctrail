@@ -1,0 +1,26 @@
+DEBUG - config file: ./src/test/resources/configs/ctrail-first-word-match.xml
+TRACE - total number of line colors found:7
+TRACE - added FG:(dbg)=blue
+TRACE - added FL:(dbg)=yellow
+TRACE - added FG:(inf)=yellow
+TRACE - added FL:(inf)=blue_underlined
+TRACE - added FG:(err)=red
+TRACE - added FL:(err)=blue
+TRACE - added FG:(sev)=red
+TRACE - added FG:(wrn)=purple
+TRACE - added FG:(cfg)=cyan
+TRACE - added FG:errors=green
+TRACE - 'file-filtering' FOUND
+TRACE - total number of line colors found:2
+DEBUG - loaded file search term:FileSearchFilter(_fileName=test.log, _includeTerms=[log1b, log1a], _excldueTerms=[LOG1B])
+DEBUG - loaded file search term:FileSearchFilter(_fileName=analytics.log.0, _includeTerms=[a, b, c], _excldueTerms=[])
+DEBUG - file:test.log matches file-name in tracker:./src/test/resources/sources/test.log, setting a filter on this tracker
+[0;33m./src/test/resources/sources/test.log:[0;34m(dbg) debug (inf)[0m
+[0;37m./src/test/resources/sources/test.log:[0;37mrandom text[0m
+[0;33m./src/test/resources/sources/test.log:[0;34m(DBG) debug[0m
+[4;34m./src/test/resources/sources/test.log:[0;33m(inf) this line should appear log1a[0m
+[0;34m./src/test/resources/sources/test.log:[0;31m(err) error[0m
+[0;34m./src/test/resources/sources/test.log:[0;31m(ERR) errors[0m
+[4;34m./src/test/resources/sources/test.log:[0;33m(iNf) info[0m
+[4;34m./src/test/resources/sources/test.log:[0;33m(INF) info[0m
+[0;35m./src/test/resources/sources/test.log:[0;35m(wrn) log1b this line should appear[0m

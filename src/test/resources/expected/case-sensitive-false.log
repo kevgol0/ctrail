@@ -1,0 +1,24 @@
+DEBUG - config file: ./src/test/resources/configs/ctrail-case-ignore.xml
+TRACE - total number of line colors found:6
+TRACE - added FG:(dbg)=blue
+TRACE - added FL:(dbg)=yellow_underlined
+TRACE - added FG:(inf)=yellow
+TRACE - added FL:(inf)=blue_underlined
+TRACE - added FG:(err)=red
+TRACE - added FL:(err)=blue
+TRACE - added FG:(sev)=red
+TRACE - added FL:(sev)=red
+TRACE - added FG:(wrn)=purple
+TRACE - added FG:(cfg)=cyan
+TRACE - 'file-filtering' not present in config
+[4;33m./src/test/resources/sources/test.log:[0;34m(dbg) debug (inf)[0m
+[0;37m./src/test/resources/sources/test.log:[0;37mrandom text[0m
+[4;33m./src/test/resources/sources/test.log:[0;34m(DBG) debug[0m
+[4;34m./src/test/resources/sources/test.log:[0;33m(inf) this line should appear log1a[0m
+[0;34m./src/test/resources/sources/test.log:[0;31m(err) error[0m
+[0;34m./src/test/resources/sources/test.log:[0;31m(ERR) errors[0m
+[4;34m./src/test/resources/sources/test.log:[0;33m(iNf) info[0m
+[4;34m./src/test/resources/sources/test.log:[0;33m(INF) info[0m
+[0;35m./src/test/resources/sources/test.log:[0;35m(wrn) log1b this line should appear[0m
+[0;35m./src/test/resources/sources/test.log:[0;35m(wrn) LOG1B this line should NOT appear[0m
+
