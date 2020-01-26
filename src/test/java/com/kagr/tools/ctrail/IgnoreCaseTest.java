@@ -25,14 +25,14 @@ import org.junit.Test;
 
 
 
-public class IgnoreCaseTest
+public class IgnoreCaseTest extends StdCtrTest
 {
 
 
 	@Test
 	public void testIgnoreCase()
 	{
-		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/cofigs/ctrail-case-ignore.xml").toString());
+		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-case-ignore.xml").toString());
 
 		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
 		String args[] = new String[]
@@ -40,8 +40,12 @@ public class IgnoreCaseTest
 				p.toString()
 		};
 
+		replaceStdOut();
 		CtrailEntryPoint ep = new CtrailEntryPoint(args);
 		ep.start(10);
+		resetStdOut();
+		Assert.assertTrue(compareFiles(Paths.get("./src/test/resources/expected/case-sensitive-false.log")));
+
 	}
 
 }

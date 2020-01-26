@@ -48,10 +48,21 @@ public class StdCtrTest
 
 	public PrintStream replaceStdOut()
 	{
+		return replaceStdOut(false);
+	}
+
+
+
+
+
+	public PrintStream replaceStdOut(boolean printTempFile_)
+	{
 		try
 		{
 			_tmpFile = File.createTempFile(getClass().getSimpleName(), ".tmp");
 			_tmpFile.deleteOnExit();
+			if (printTempFile_)
+				System.out.println("temp file: " + _tmpFile.getAbsolutePath());
 			PrintStream newOut = new PrintStream(_tmpFile);
 			_stdOut = System.out;
 			resetStdOut(newOut);
@@ -106,7 +117,7 @@ public class StdCtrTest
 	{
 		try
 		{
-			byte[] expected = Files.readAllBytes(Paths.get("./src/test/resources/expected/ctrail-file-search-expected-result.log"));
+			byte[] expected = Files.readAllBytes(expectedFile_);
 			byte[] actual = Files.readAllBytes(getTempFilePath());
 			return Arrays.equals(expected, actual);
 		}

@@ -13,7 +13,6 @@ package com.kagr.tools.ctrail.unit;
 
 
 
-import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -25,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.kagr.tools.ctrail.ConsoleColors;
 import com.kagr.tools.ctrail.props.CtrailProps;
-import com.kagr.tools.ctrail.props.FileSearchFilter;
 
 
 

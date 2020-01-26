@@ -22,19 +22,18 @@
 
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
 
-    <matchFirstWord>true</matchFirstWord>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <matchFirstWord>true</matchFirstWord>
-
-    <!-- case sensitivity -->
-    <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
-
+    
   </execution>
 
 
   <coloring>
+    <!-- case sensitivity -->
+
     <filename>
-      <blankLineOnFileChange>true</blankLineOnFileChange>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
 
     <!-- if any of the keywords are found on a line, then that line
@@ -68,7 +67,7 @@
       <colorpair>
         <keyword>(DBG)</keyword>
         <fgcolor>blue</fgcolor>
-        <flcolor>yellow_underlined</flcolor>
+        <flcolor>yellow</flcolor>
       </colorpair>
 
 
@@ -87,7 +86,7 @@
       <colorpair>
         <keyword>(SEV)</keyword>
         <fgcolor>red</fgcolor>
-        <fgcolor>red</fgcolor>
+        <fgcolor>blue</fgcolor>
       </colorpair>
 
       <colorpair>
@@ -100,7 +99,38 @@
         <fgcolor>cyan</fgcolor>
       </colorpair>
 
+      <colorpair>
+        <keyword>errors</keyword>
+        <fgcolor>green</fgcolor>
+      </colorpair>
+
     </linecolors>
   </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+    
+    <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
+
+    <filefilter>
+      <filename>test.log</filename>
+      <includes>
+        <keyword>log1b</keyword>
+        <keyword>log1a</keyword>
+      </includes>
+      <excludes>
+        <keyword>LOG1B</keyword>
+      </excludes>
+    </filefilter>
+
+    <filefilter>
+      <filename>analytics.log.0</filename>
+      <includes>
+        <keyword>a</keyword>
+        <keyword>b</keyword>
+        <keyword>c</keyword>
+      </includes>
+    </filefilter>
+  </filtering>
 
 </ctrail>

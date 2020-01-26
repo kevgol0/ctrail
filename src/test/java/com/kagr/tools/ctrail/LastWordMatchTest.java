@@ -25,7 +25,7 @@ import org.junit.Test;
 
 
 
-public class LastWordMatchTest
+public class LastWordMatchTest extends StdCtrTest
 {
 	@Test
 	public void testWithLastWordMatch()
@@ -37,7 +37,10 @@ public class LastWordMatchTest
 				p.toString(),
 		};
 
+		replaceStdOut();
 		CtrailEntryPoint ep = new CtrailEntryPoint(args);
 		ep.start(100);
+		resetStdOut();
+		Assert.assertTrue(compareFiles(Paths.get(".", "src/test/resources/expected/last-word-match.log")));
 	}
 }

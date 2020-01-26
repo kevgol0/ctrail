@@ -23,12 +23,14 @@
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
     
     <matchFirstWord>true</matchFirstWord>
+    
+    <!-- case sensitivity -->
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
   </execution>
 
 
   <coloring>
-    <!-- case sensitivity -->
-    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    
 
     <filename>
       <blankLineOnFileChange>true</blankLineOnFileChange>

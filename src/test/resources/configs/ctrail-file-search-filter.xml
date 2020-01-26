@@ -25,6 +25,7 @@
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <matchFirstWord>false</matchFirstWord>
+    
   </execution>
 
 
@@ -106,20 +107,31 @@
     </linecolors>
   </coloring>
 
-
   <filtering>
     <enabled>true</enabled>
     
+    <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
+
     <filefilter>
       <filename>test.log</filename>
-      <keyword>log1a</keyword>
-      <keyword>log1b</keyword>
+      <includes>
+        <keyword>log1b</keyword>
+        <keyword>log1a</keyword>
+      </includes>
+      <excludes>
+        <keyword>LOG1B</keyword>
+      </excludes>
     </filefilter>
-    
+
     <filefilter>
       <filename>test2.log</filename>
-      <keyword>log2a</keyword>
-      <keyword>log2b</keyword>
+      <includes>
+        <keyword>log2a</keyword>
+      </includes>
+      <excludes>
+        <keyword>log2b</keyword>
+        <keyword>log2b</keyword>
+      </excludes>
     </filefilter>
   </filtering>
 </ctrail>

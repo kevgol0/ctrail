@@ -25,7 +25,7 @@
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <matchFirstWord>false</matchFirstWord>
-    
+
   </execution>
 
 
@@ -111,7 +111,7 @@
     <enabled>true</enabled>
     
     <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
-
+    
     <filefilter>
       <filename>test.log</filename>
       <includes>
@@ -124,12 +124,14 @@
     </filefilter>
 
     <filefilter>
-      <filename>analytics.log.0</filename>
+      <filename>test2.log</filename>
       <includes>
-        <keyword>a</keyword>
-        <keyword>b</keyword>
-        <keyword>c</keyword>
+        <keyword>log2a</keyword>
       </includes>
+      <excludes>
+        <keyword>log2b</keyword>
+        <keyword>log2b</keyword>
+      </excludes>
     </filefilter>
   </filtering>
 

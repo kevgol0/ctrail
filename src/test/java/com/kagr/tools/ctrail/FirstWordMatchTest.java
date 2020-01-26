@@ -25,22 +25,22 @@ import org.junit.Test;
 
 
 
-public class CaseSensitiveTest extends StdCtrTest
+public class FirstWordMatchTest extends StdCtrTest
 {
 	@Test
-	public void testWithCaseSensitive()
+	public void testWithLastWordMatch()
 	{
-		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-case-sensitive.xml").toString());
+		System.setProperty("CTRAIL_CFG", Paths.get(".", "src", "test", "resources", "configs", "ctrail-first-word-match.xml").toString());
 		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
 		String args[] = new String[]
 		{
 				p.toString(),
 		};
-		
+
 		replaceStdOut();
 		CtrailEntryPoint ep = new CtrailEntryPoint(args);
 		ep.start(10);
 		resetStdOut();
-		Assert.assertTrue(compareFiles(Paths.get(".", "src/test/resources/expected/case-sensitive-true.log")));
+		Assert.assertTrue(compareFiles(Paths.get(".", "src/test/resources/expected/first-word-match.log")));
 	}
 }
