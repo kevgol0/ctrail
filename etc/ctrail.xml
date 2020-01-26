@@ -25,14 +25,14 @@
       of words specified in the coloring seciont; this means, the ORDER in
       which words are added to the below list matters for your line matching -->
     <matchFirstWord>false</matchFirstWord>
-
+    
+    <!-- case sensitivity -->
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
   </execution>
 
 
   <coloring>
-    <!-- case sensitivity -->
-    <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
-
+    
     <filename>
       <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
@@ -117,27 +117,24 @@
     <!-- specifies if a line should be included in the outout,
       if a is specified, but no search terms matched either the include or
       the exclude list -->
-    <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
 
 
     <filefilter>
-      <filename>user-mgr.log.0</filename>
+      <filename>locsub-inst01A.log.0</filename>
       <includes>
-        <keyword>a</keyword>
-        <keyword>b</keyword>
-        <keyword>c</keyword>
+        <keyword>geo-lookup</keyword>
+        <keyword>already contains subscription</keyword>
       </includes>
-      <excludes>
-        <keyword>d</keyword>
-      </excludes>
+      <excludes/>
     </filefilter>
 
     <filefilter>
-      <filename>analytics.log.0</filename>
+      <filename>usermgr-inst01B.log.0</filename>
       <includes>
-        <keyword>a</keyword>
-        <keyword>b</keyword>
-        <keyword>c</keyword>
+        <keyword>queried</keyword>
+        <keyword>acc-create</keyword>
+        <keyword>login</keyword>
       </includes>
     </filefilter>
   </filtering>
