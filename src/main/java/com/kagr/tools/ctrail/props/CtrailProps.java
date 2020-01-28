@@ -160,7 +160,7 @@ public class CtrailProps
 		int filterCfgSz = 0;
 		try
 		{
-			filterCfgSz = ((Collection<?>) config_.getProperty("filtering.filefilter.filename")).size();
+			filterCfgSz = extractCount(config_, "filtering.filefilter.filename");//((Collection<?>) config_.getProperty("filtering.filefilter.filename")).size();
 			_logger.trace("total number of line colors found:{}", filterCfgSz);
 		}
 		catch (Exception ex_)

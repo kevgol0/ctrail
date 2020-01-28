@@ -15,21 +15,26 @@ package com.kagr.tools.ctrail.props;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 
 import lombok.Data;
+
+
+
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 
 
 
 
 @Data
-@RequiredArgsConstructor
+@Slf4j
 public class FileSearchFilter
 {
 	@NonNull @Getter @Setter private String _fileName;
@@ -42,8 +47,61 @@ public class FileSearchFilter
 
 
 
+	public FileSearchFilter(String fileName_)
+	{
+		_fileName = toRegEx(fileName_);
+		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
+	}
+
+
+
+
+
+	private @NonNull String toRegEx(String fileName_)
+	{
+		StringBuilder buff = new StringBuilder();
+		char val;
+		for (int i = 0; i < fileName_.length(); i++)
+		{
+			val = fileName_.charAt(i);
+			switch (val)
+			{
+			case '*':
+				buff.append(".?");
+				break;
+			case '.':
+				buff.append("\\.");
+				break;
+			default:
+				buff.append(val);
+				break;
+			}
+		}
+
+		return buff.toString();
+	}
+
+
+
+
+
 	public boolean doesMatchFilename(@NonNull String fname_)
 	{
-		return fname_.contains(_fileName);
+		boolean rv = false;
+		try
+		{
+			Pattern p = Pattern.compile(_fileName);
+			Matcher m = p.matcher(fname_);
+			rv = m.find();
+			_logger.info("{} matches {}:{}", _fileName, fname_, rv);		
+		}
+		catch (Exception ex_)
+		{
+			_logger.error(ex_.toString());
+		}
+		return rv;
 	}
+
+
+
 }

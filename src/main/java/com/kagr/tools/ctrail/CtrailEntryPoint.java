@@ -15,6 +15,8 @@ package com.kagr.tools.ctrail;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.concurrent.BlockingDeque;
@@ -111,8 +113,6 @@ public class CtrailEntryPoint
 		_writer.start();
 	}
 
-	
-	
 
 
 
@@ -129,6 +129,7 @@ public class CtrailEntryPoint
 			try
 			{
 				file = new File(s);
+				Path p = Paths.get(s);
 				if (!file.isFile() || !file.canRead())
 				{
 					if (_logger.isInfoEnabled())
@@ -142,7 +143,7 @@ public class CtrailEntryPoint
 					break;
 				}
 
-				FileTailTracker ftracker = new FileTailTracker(s, new RandomAccessFile(file, "r"));
+				FileTailTracker ftracker = new FileTailTracker(p.getName(p.getNameCount() - 1).toString(), new RandomAccessFile(file, "r"));
 				findAndSetFileTracker(fstMap, s, ftracker);
 				deq.add(ftracker);
 			}

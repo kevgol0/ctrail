@@ -56,6 +56,7 @@ public class FileTailTracker
 		if (StringUtils.isEmpty(_fileName))
 			_fileName = file_.toString();
 		setFile(file_);
+		_logger.info("Filetracker for:{}", _fileName);
 
 
 		// only look at the end of the file
