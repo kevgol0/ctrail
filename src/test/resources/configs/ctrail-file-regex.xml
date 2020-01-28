@@ -113,7 +113,7 @@
     <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
 
     <filefilter>
-      <filename>test*.log</filename>
+      <filename>test*.log*</filename>
       <includes>
         <keyword>log1b</keyword>
         <keyword>log1a</keyword>

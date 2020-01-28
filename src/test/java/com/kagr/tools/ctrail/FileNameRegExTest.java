@@ -43,10 +43,11 @@ public class FileNameRegExTest extends StdCtrTest
 		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-file-regex.xml").toString());
 		Path p1 = Paths.get(".", "src", "test", "resources", "sources", "test.log");
 		Path p2 = Paths.get(".", "src", "test", "resources", "sources", "test2.log");
+		Path p4 = Paths.get(".", "src", "test", "resources", "sources", "test40000b.log.0");
 		Path p3 = Paths.get(".", "src", "test", "resources", "sources", "ace.log");
 		String args[] = new String[]
 		{
-				p1.toString(), p2.toString(), p3.toString()
+				p1.toString(), p2.toString(), p3.toString(), p4.toString()
 		};
 
 		try

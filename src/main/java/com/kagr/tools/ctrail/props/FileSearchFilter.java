@@ -20,10 +20,11 @@ import java.util.regex.Pattern;
 
 
 
+import org.apache.commons.io.FilenameUtils;
+
+
+
 import lombok.Data;
-
-
-
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -50,7 +51,7 @@ public class FileSearchFilter
 	public FileSearchFilter(String fileName_)
 	{
 		_fileName = toRegEx(fileName_);
-		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
+		_logger.debug("filename:{}, results in:{}", _fileName, fileName_);
 	}
 
 
@@ -67,7 +68,7 @@ public class FileSearchFilter
 			switch (val)
 			{
 			case '*':
-				buff.append(".?");
+				buff.append("(\\w)*");
 				break;
 			case '.':
 				buff.append("\\.");
@@ -93,7 +94,8 @@ public class FileSearchFilter
 			Pattern p = Pattern.compile(_fileName);
 			Matcher m = p.matcher(fname_);
 			rv = m.find();
-			_logger.info("{} matches {}:{}", _fileName, fname_, rv);		
+			if (_logger.isDebugEnabled())
+				_logger.debug("{} matches {}:{}", _fileName, fname_, rv);
 		}
 		catch (Exception ex_)
 		{
