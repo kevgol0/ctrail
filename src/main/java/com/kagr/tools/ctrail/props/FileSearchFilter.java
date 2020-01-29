@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 
@@ -51,7 +52,7 @@ public class FileSearchFilter
 	public FileSearchFilter(String fileName_)
 	{
 		_fileName = toRegEx(fileName_);
-		_logger.debug("filename:{}, results in:{}", _fileName, fileName_);
+		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
 	}
 
 
@@ -68,7 +69,7 @@ public class FileSearchFilter
 			switch (val)
 			{
 			case '*':
-				buff.append("(\\w)*");
+				buff.append("(.)*");
 				break;
 			case '.':
 				buff.append("\\.");
@@ -78,6 +79,7 @@ public class FileSearchFilter
 				break;
 			}
 		}
+		
 
 		return buff.toString();
 	}
@@ -96,6 +98,8 @@ public class FileSearchFilter
 			rv = m.find();
 			if (_logger.isDebugEnabled())
 				_logger.debug("{} matches {}:{}", _fileName, fname_, rv);
+			
+			//rv = FileUtils.
 		}
 		catch (Exception ex_)
 		{

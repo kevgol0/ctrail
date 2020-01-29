@@ -121,7 +121,7 @@
 
 
     <filefilter>
-      <filename>locsub-inst01A.log.0</filename>
+      <filename>cityspark*.log.0</filename>
       <includes>
         <keyword>geo-lookup</keyword>
         <keyword>already contains subscription</keyword>
@@ -130,7 +130,7 @@
     </filefilter>
 
     <filefilter>
-      <filename>usermgr-inst01B.log.0</filename>
+      <filename>other.log</filename>
       <includes>
         <keyword>queried</keyword>
         <keyword>acc-create</keyword>

@@ -130,6 +130,7 @@ public class CtrailEntryPoint
 			{
 				file = new File(s);
 				Path p = Paths.get(s);
+				String filename = p.getName(p.getNameCount() - 1).toString();
 				if (!file.isFile() || !file.canRead())
 				{
 					if (_logger.isInfoEnabled())
@@ -143,8 +144,8 @@ public class CtrailEntryPoint
 					break;
 				}
 
-				FileTailTracker ftracker = new FileTailTracker(p.getName(p.getNameCount() - 1).toString(), new RandomAccessFile(file, "r"));
-				findAndSetFileTracker(fstMap, s, ftracker);
+				FileTailTracker ftracker = new FileTailTracker(filename, new RandomAccessFile(file, "r"));
+				findAndSetFileTracker(fstMap, filename, ftracker);
 				deq.add(ftracker);
 			}
 			catch (Exception ex_)
@@ -169,7 +170,7 @@ public class CtrailEntryPoint
 		while (itr.hasNext())
 		{
 			fst = fstMap_.get(itr.next());
-			if (fst.doesMatchFilename(fileName_))
+			if (fst.doesMatchFilename(fileName_) && ftracker_.getFileSearchFilter() == null)
 			{
 				ftracker_.setFileSearchTerms(fst);
 				_logger.debug("file:{} matches file-name in tracker:{}, setting a filter on this tracker",
