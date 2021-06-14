@@ -250,7 +250,7 @@ public class CtrailEntryPoint
                 {
                     return;
                 }
-                wait(100);
+                _writer.wait(100);
             }
         }
         catch (InterruptedException ex_)
