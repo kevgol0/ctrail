@@ -37,45 +37,60 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StdinReaderThread implements Runnable
 {
-	private InputStream _iStream;
+    private InputStream _iStream;
 
-	@Getter @Setter(AccessLevel.PROTECTED) private Deque<LogLine> _output;
+    @Getter
+    @Setter(AccessLevel.PROTECTED)
+    private Deque<LogLine> _output;
 
-	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
-
-
-
-
-
-	public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_, String match_)
-	{
-		_iStream = is_;
-		setOutput(output_);
-		setMatch(match_);
-	}
+    @Getter
+    @Setter(AccessLevel.PRIVATE)
+    private String _match;
 
 
 
 
 
-	public void run()
-	{
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
-		{
-			String line;
-			while ((line = reader.readLine()) != null)
-			{
-				if (_match == null)
-					_output.add(new LogLine("stdin", line, null));
-				else if (line.contains(_match))
-					_output.add(new LogLine("stdin", line, null));
-			}
-		}
-		catch (Exception ex_)
-		{
-			_logger.error(ex_.toString());
+    public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_, String match_)
+    {
+        _iStream = is_;
+        setOutput(output_);
+        setMatch(match_);
+    }
 
-		}
-	}
+
+
+
+
+    public void run()
+    {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
+        {
+            String line;
+            if (_match == null)
+            {
+                while ((line = reader.readLine()) != null)
+                {
+                    _output.add(new LogLine("stdin", line, null));
+                }
+
+            }
+            else
+            {
+                while ((line = reader.readLine()) != null)
+                {
+                    if (line.contains(_match))
+                    {
+                        _output.add(new LogLine("stdin", line, null));
+                    }
+                }
+
+            }
+        }
+        catch (Exception ex_)
+        {
+            _logger.error(ex_.toString());
+        }
+    }
 
 }
