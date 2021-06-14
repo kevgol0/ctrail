@@ -79,7 +79,7 @@ public class FileSearchFilter
 				break;
 			}
 		}
-		
+
 
 		return buff.toString();
 	}
@@ -98,7 +98,7 @@ public class FileSearchFilter
 			rv = m.find();
 			if (_logger.isDebugEnabled())
 				_logger.debug("{} matches {}:{}", _fileName, fname_, rv);
-			
+
 			//rv = FileUtils.
 		}
 		catch (Exception ex_)

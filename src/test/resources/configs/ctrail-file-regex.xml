@@ -25,7 +25,7 @@
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
 
     <matchFirstWord>false</matchFirstWord>
-    
+
   </execution>
 
 
@@ -109,8 +109,8 @@
 
   <filtering>
     <enabled>true</enabled>
-    
-    <fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
+
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
 
     <filefilter>
       <filename>test*.log*</filename>
@@ -120,6 +120,16 @@
       </includes>
       <excludes>
         <keyword>LOG1B</keyword>
+      </excludes>
+    </filefilter>
+
+    <filefilter>
+      <filename>apiws-inst01A.log.0</filename>
+      <includes>
+        <keyword>Timeout</keyword>
+      </includes>
+      <excludes>
+        <keyword>received</keyword>
       </excludes>
     </filefilter>
   </filtering>

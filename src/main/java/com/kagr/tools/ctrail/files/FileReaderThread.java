@@ -196,21 +196,10 @@ public class FileReaderThread implements Runnable
 		//
 		if (fileSearchTerms_ != null)
 		{
-			for (int i = 0; i < fileSearchTerms_.getExcldueTerms().size(); i++ )
-			{
-				if (line_.contains(fileSearchTerms_.getExcldueTerms().get(i)))
-				{
-					//
-					// this file has a filter set, and i 
-					// found a search term specified in the exclude
-					// filter... I want to EXCLUDE this line
-					//
-					return true;
-				}
-			}
-			
-			
-			for (int i = 0; i < fileSearchTerms_.getIncludeTerms().size(); i++ )
+			//
+			// includes trump excludes... this MUST happen first
+			//
+			for (int i = 0; i < fileSearchTerms_.getIncludeTerms().size(); i++)
 			{
 				if (line_.contains(fileSearchTerms_.getIncludeTerms().get(i)))
 				{
@@ -222,6 +211,21 @@ public class FileReaderThread implements Runnable
 					return false;
 				}
 			}
+
+
+			for (int i = 0; i < fileSearchTerms_.getExcldueTerms().size(); i++)
+			{
+				if (line_.contains(fileSearchTerms_.getExcldueTerms().get(i)))
+				{
+					//
+					// this file has a filter set, and i 
+					// found a search term specified in the exclude
+					// filter... I want to EXCLUDE this line
+					//
+					return true;
+				}
+			}
+
 
 
 			//

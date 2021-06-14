@@ -4,13 +4,16 @@
   <logger name="org" level="OFF" additive="false" />
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <withJansi>false</withJansi>
-    <encoder>
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+      <charset>UTF-8</charset>
       <pattern>
         %d{HH:mm:ss:SSS} [%thread] %-5level - %msg%n
       </pattern>
     </encoder>
   </appender>
-  <root level="ERROR">
+  <logger name="org.apache.commons.beanutils" level="WARN"/>
+  <logger name="log4j.logger.org.apache.commons.beanutils" level="ERROR"/>
+  <root level="WARN">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>
