@@ -47,15 +47,19 @@ public class StdinReaderThread implements Runnable
     @Setter(AccessLevel.PRIVATE)
     private String _match;
 
+    @Getter
+    private final OutputWriterThread _outThread;
 
 
 
 
-    public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_, String match_)
+
+    public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_, String match_, @NonNull OutputWriterThread outThread_)
     {
         _iStream = is_;
         setOutput(output_);
         setMatch(match_);
+        _outThread = outThread_;
     }
 
 
@@ -73,7 +77,6 @@ public class StdinReaderThread implements Runnable
                 {
                     _output.add(new LogLine("stdin", line, null));
                 }
-
             }
             else
             {
@@ -84,7 +87,12 @@ public class StdinReaderThread implements Runnable
                         _output.add(new LogLine("stdin", line, null));
                     }
                 }
+            }
 
+            _outThread.setShouldContinue(false, true);
+            if (_logger.isTraceEnabled())
+            {
+                _logger.trace("finished read from std-in");
             }
         }
         catch (Exception ex_)

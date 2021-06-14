@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kagr.tools</groupId>
   <artifactId>ctrail</artifactId>
-  <version>0.0.8</version>
+  <version>0.0.9</version>
 
 
   <properties>
@@ -37,6 +37,11 @@
       <version>1.2.3</version>
     </dependency>
     <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <version>1.7.30</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
       <version>2.7</version>
@@ -51,7 +56,6 @@
       <artifactId>commons-cli</artifactId>
       <version>1.4</version>
     </dependency>
-
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>

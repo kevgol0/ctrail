@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CtrailEntryPoint
 {
     private Thread _reader;
-    private Thread _writer;
+    private OutputWriterThread _writer;
     private BlockingDeque<LogLine> _output;
     private BlockingDeque<FileTailTracker> _fileTrackers;
     private String _matchpattern;
@@ -93,7 +93,7 @@ public class CtrailEntryPoint
         _fileTrackers = getFilesFromArgs(args_);
         if (_fileTrackers.size() <= 0)
         {
-            _reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern));
+            _reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern, _writer));
         }
         else
         {
@@ -109,7 +109,7 @@ public class CtrailEntryPoint
 
     private void initWriterThreads()
     {
-        _writer = new Thread(new OutputWriterThread(_output, System.out));
+        _writer = new OutputWriterThread(_output, System.out);
         _writer.start();
     }
 
@@ -244,13 +244,13 @@ public class CtrailEntryPoint
 
         try
         {
-            synchronized (this)
+            synchronized (_writer)
             {
-                if (millis_ > 0)
-                    wait(millis_);
-                else
-                    wait();
-
+                if (!_writer.isShouldContinue() && _writer.getOutput().size() <= 0)
+                {
+                    return;
+                }
+                wait(100);
             }
         }
         catch (InterruptedException ex_)
