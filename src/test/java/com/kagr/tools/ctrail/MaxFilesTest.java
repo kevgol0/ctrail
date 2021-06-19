@@ -31,21 +31,21 @@ import com.kagr.tools.ctrail.props.CtrailProps;
 public class MaxFilesTest
 {
 
-	@Test
-	public void test()
-	{
-		CtrailProps props = CtrailProps.getInstance();
-		props.setMaxNbrInputFiles(1);
-		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
-		Path p2 = Paths.get(".", "src", "test", "resources", "sources", "test2.log");
-		String args[] = new String[]
-		{
-				p.toString(),
-				p2.toString()
-		};
+    @Test
+    public void test()
+    {
+        final CtrailProps props = CtrailProps.getInstance();
+        props.setMaxNbrInputFiles(1);
+        final Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
+        final Path p2 = Paths.get(".", "src", "test", "resources", "sources", "test2.log");
+        final String args[] = new String[]
+        {
+          p.toString(),
+          p2.toString()
+        };
 
-		CtrailEntryPoint ep = new CtrailEntryPoint(args);
-		ep.start(100);
-	}
+        final CtrailEntryPoint ep = new CtrailEntryPoint(args);
+        ep.start(100);
+    }
 
 }

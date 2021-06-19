@@ -26,21 +26,21 @@ import lombok.Data;
 @Data
 public class LogLine
 {
-	private String _origFilename;
+    private String _origFilename;
 
-	private String _line;
+    private String _line;
 
-	FileSearchFilter _fileSearchFilters;
-
-
+    FileSearchFilter _fileSearchFilters;
 
 
 
-	public LogLine(String origFileName_, String line_, FileSearchFilter fst_)
-	{
-		setOrigFilename(origFileName_);
-		setLine(line_);
-		setFileSearchFilters(fst_);
-	}
+
+
+    public LogLine(final String origFileName_, final String line_, final FileSearchFilter fst_)
+    {
+        setOrigFilename(origFileName_);
+        setLine(line_);
+        setFileSearchFilters(fst_);
+    }
 
 }

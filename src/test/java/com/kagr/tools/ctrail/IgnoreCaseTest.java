@@ -29,23 +29,23 @@ public class IgnoreCaseTest extends StdCtrTest
 {
 
 
-	@Test
-	public void testIgnoreCase()
-	{
-		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-case-ignore.xml").toString());
+    @Test
+    public void testIgnoreCase()
+    {
+        System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-case-ignore.xml").toString());
 
-		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
-		String args[] = new String[]
-		{
-				p.toString()
-		};
+        final Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
+        final String args[] = new String[]
+        {
+          p.toString()
+        };
 
-		replaceStdOut();
-		CtrailEntryPoint ep = new CtrailEntryPoint(args);
-		ep.start(10);
-		resetStdOut();
-		Assert.assertTrue(compareFiles(Paths.get("./src/test/resources/expected/case-sensitive-false.log")));
+        replaceStdOut();
+        final CtrailEntryPoint ep = new CtrailEntryPoint(args);
+        ep.start(10);
+        resetStdOut();
+        Assert.assertTrue(compareFiles(Paths.get("./src/test/resources/expected/case-sensitive-false.log")));
 
-	}
+    }
 
 }

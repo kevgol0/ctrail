@@ -55,7 +55,7 @@ public class CtrailEntryPoint
 {
     private Thread _reader;
     private OutputWriterThread _writer;
-    private BlockingDeque<LogLine> _output;
+    private final BlockingDeque<LogLine> _output;
     private BlockingDeque<FileTailTracker> _fileTrackers;
     private String _matchpattern;
 
@@ -63,13 +63,13 @@ public class CtrailEntryPoint
 
 
 
-    public CtrailEntryPoint(String[] args_)
+    public CtrailEntryPoint(final String[] args_)
     {
         //
         // props
         // 
         loadProps();
-        String[] remainingArgs = loadArgsAndOverrides(args_);
+        final String[] remainingArgs = loadArgsAndOverrides(args_);
 
 
 
@@ -88,7 +88,7 @@ public class CtrailEntryPoint
 
 
 
-    private void initReaderThreads(String[] args_)
+    private void initReaderThreads(final String[] args_)
     {
         _fileTrackers = getFilesFromArgs(args_);
         if (_fileTrackers.size() <= 0)
@@ -117,24 +117,26 @@ public class CtrailEntryPoint
 
 
 
-    private BlockingDeque<FileTailTracker> getFilesFromArgs(String[] args_)
+    private BlockingDeque<FileTailTracker> getFilesFromArgs(final String[] args_)
     {
-        int maxFileCnt = CtrailProps.getInstance().getMaxNbrInputFiles();
-        Hashtable<String, FileSearchFilter> fstMap = CtrailProps.getInstance().getFileSearchFilters();
-        LinkedBlockingDeque<FileTailTracker> deq = new LinkedBlockingDeque<>(maxFileCnt);
+        final int maxFileCnt = CtrailProps.getInstance().getMaxNbrInputFiles();
+        final Hashtable<String, FileSearchFilter> fstMap = CtrailProps.getInstance().getFileSearchFilters();
+        final LinkedBlockingDeque<FileTailTracker> deq = new LinkedBlockingDeque<>(maxFileCnt);
         int cntr = 0;
         File file;
-        for (String s : args_)
+        for (final String s : args_)
         {
             try
             {
                 file = new File(s);
-                Path p = Paths.get(s);
-                String filename = p.getName(p.getNameCount() - 1).toString();
+                final Path p = Paths.get(s);
+                final String filename = p.getName(p.getNameCount() - 1).toString();
                 if (!file.isFile() || !file.canRead())
                 {
                     if (_logger.isInfoEnabled())
+                    {
                         _logger.info("{} is either not a file or not readable", s);
+                    }
                     continue;
                 }
 
@@ -144,11 +146,11 @@ public class CtrailEntryPoint
                     break;
                 }
 
-                FileTailTracker ftracker = new FileTailTracker(filename, new RandomAccessFile(file, "r"));
+                final FileTailTracker ftracker = new FileTailTracker(filename, new RandomAccessFile(file, "r"));
                 findAndSetFileTracker(fstMap, filename, ftracker);
                 deq.add(ftracker);
             }
-            catch (Exception ex_)
+            catch (final Exception ex_)
             {
                 _logger.error(ex_.toString());
             }
@@ -160,13 +162,15 @@ public class CtrailEntryPoint
 
 
 
-    private void findAndSetFileTracker(Hashtable<String, FileSearchFilter> fstMap_, String fileName_, FileTailTracker ftracker_)
+    private void findAndSetFileTracker(final Hashtable<String, FileSearchFilter> fstMap_, final String fileName_, final FileTailTracker ftracker_)
     {
         if (!CtrailProps.getInstance().isEnabledFileFiltering())
+        {
             return;
+        }
 
         FileSearchFilter fst;
-        Iterator<String> itr = fstMap_.keySet().iterator();
+        final Iterator<String> itr = fstMap_.keySet().iterator();
         while (itr.hasNext())
         {
             fst = fstMap_.get(itr.next());
@@ -192,10 +196,10 @@ public class CtrailEntryPoint
 
 
 
-    private String[] loadArgsAndOverrides(String[] args_)
+    private String[] loadArgsAndOverrides(final String[] args_)
     {
-        CommandLineParser parser = new DefaultParser();
-        Options options = new Options();
+        final CommandLineParser parser = new DefaultParser();
+        final Options options = new Options();
 
         options.addOption(Option.builder("e").longOpt("entirefile").desc("runs through the entire file").build());
         options.addOption(Option.builder("m").longOpt("match").hasArg().argName("STR")
@@ -207,18 +211,24 @@ public class CtrailEntryPoint
 
         try
         {
-            CommandLine line = parser.parse(options, args_);
+            final CommandLine line = parser.parse(options, args_);
 
             if (line.hasOption("e"))
+            {
                 CtrailProps.getInstance().setSkipAheadInBytes(0);
+            }
             if (line.hasOption("m"))
+            {
                 _matchpattern = line.getOptionValue("m");
+            }
             if (line.hasOption("f"))
+            {
                 CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("f")));
+            }
 
             if (line.hasOption("h"))
             {
-                HelpFormatter formatter = new HelpFormatter();
+                final HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("ctr", options);
                 System.exit(1);
             }
@@ -226,7 +236,7 @@ public class CtrailEntryPoint
 
             return line.getArgs();
         }
-        catch (ParseException ex_)
+        catch (final ParseException ex_)
         {
             _logger.error(ex_.toString());
         }
@@ -239,7 +249,7 @@ public class CtrailEntryPoint
 
 
 
-    protected void start(int millis_)
+    protected void start(final int millis_)
     {
 
         try
@@ -253,7 +263,7 @@ public class CtrailEntryPoint
                 _writer.wait(100);
             }
         }
-        catch (InterruptedException ex_)
+        catch (final InterruptedException ex_)
         {
             _logger.error(ex_.toString());
         }
@@ -263,9 +273,9 @@ public class CtrailEntryPoint
 
 
 
-    public static void main(String[] args_)
+    public static void main(final String[] args_)
     {
-        CtrailEntryPoint trailer = new CtrailEntryPoint(args_);
+        final CtrailEntryPoint trailer = new CtrailEntryPoint(args_);
         trailer.start(0);
     }
 

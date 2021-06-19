@@ -52,7 +52,7 @@ public class OutputWriterThread extends Thread
 
 
 
-    public OutputWriterThread(@NonNull BlockingDeque<LogLine> output_, @NonNull PrintStream out_)
+    public OutputWriterThread(@NonNull final BlockingDeque<LogLine> output_, @NonNull final PrintStream out_)
     {
         setOutput(output_);
         setSout(out_);
@@ -78,7 +78,7 @@ public class OutputWriterThread extends Thread
                     _logger.trace("should-continue:{}", _shouldContinue);
                 }
             }
-            catch (InterruptedException ex_)
+            catch (final InterruptedException ex_)
             {
                 if (_shouldContinue)
                 {
@@ -102,7 +102,7 @@ public class OutputWriterThread extends Thread
                     _logger.trace("emptying q:{}", sz);
                 }
             }
-            catch (InterruptedException ex_)
+            catch (final InterruptedException ex_)
             {
                 _logger.error(ex_.toString());
             }
@@ -118,7 +118,7 @@ public class OutputWriterThread extends Thread
 
 
 
-    public synchronized void setShouldContinue(boolean sc_, boolean shouldInterrupt_)
+    public synchronized void setShouldContinue(final boolean sc_, final boolean shouldInterrupt_)
     {
 
         _shouldContinue = sc_;

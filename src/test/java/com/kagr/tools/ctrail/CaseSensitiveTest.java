@@ -27,20 +27,20 @@ import org.junit.Test;
 
 public class CaseSensitiveTest extends StdCtrTest
 {
-	@Test
-	public void testWithCaseSensitive()
-	{
-		System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-case-sensitive.xml").toString());
-		Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
-		String args[] = new String[]
-		{
-				p.toString(),
-		};
-		
-		replaceStdOut();
-		CtrailEntryPoint ep = new CtrailEntryPoint(args);
-		ep.start(10);
-		resetStdOut();
-		Assert.assertTrue(compareFiles(Paths.get(".", "src/test/resources/expected/case-sensitive-true.log")));
-	}
+    @Test
+    public void testWithCaseSensitive()
+    {
+        System.setProperty("CTRAIL_CFG", Paths.get("./src/test/resources/configs/ctrail-case-sensitive.xml").toString());
+        final Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
+        final String args[] = new String[]
+        {
+          p.toString(),
+        };
+
+        replaceStdOut();
+        final CtrailEntryPoint ep = new CtrailEntryPoint(args);
+        ep.start(10);
+        resetStdOut();
+        Assert.assertTrue(compareFiles(Paths.get(".", "src/test/resources/expected/case-sensitive-true.log")));
+    }
 }

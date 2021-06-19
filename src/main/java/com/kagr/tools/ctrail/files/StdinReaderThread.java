@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StdinReaderThread implements Runnable
 {
-    private InputStream _iStream;
+    private final InputStream _iStream;
 
     @Getter
     @Setter(AccessLevel.PROTECTED)
@@ -54,7 +54,7 @@ public class StdinReaderThread implements Runnable
 
 
 
-    public StdinReaderThread(InputStream is_, @NonNull Deque<LogLine> output_, String match_, @NonNull OutputWriterThread outThread_)
+    public StdinReaderThread(final InputStream is_, @NonNull final Deque<LogLine> output_, final String match_, @NonNull final OutputWriterThread outThread_)
     {
         _iStream = is_;
         setOutput(output_);
@@ -66,6 +66,7 @@ public class StdinReaderThread implements Runnable
 
 
 
+    @Override
     public void run()
     {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
@@ -95,7 +96,7 @@ public class StdinReaderThread implements Runnable
                 _logger.trace("finished read from std-in");
             }
         }
-        catch (Exception ex_)
+        catch (final Exception ex_)
         {
             _logger.error(ex_.toString());
         }

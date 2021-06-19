@@ -39,70 +39,80 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileTailTracker
 {
-	@Getter @Setter private RandomAccessFile _file;
-	@Getter @Setter private long _lastReadPosition;
+    @Getter
+    @Setter
+    private RandomAccessFile _file;
+    @Getter
+    @Setter
+    private long _lastReadPosition;
 
-	@Getter private String _fileName;
+    @Getter
+    private String _fileName;
 
-	@Getter FileSearchFilter _fileSearchFilter;
-
-
-
-
-
-	public FileTailTracker(@NonNull String fname_, @NonNull RandomAccessFile file_)
-	{
-		_fileName = fname_;
-		if (StringUtils.isEmpty(_fileName))
-			_fileName = file_.toString();
-		setFile(file_);
-		_logger.info("Filetracker for:{}", _fileName);
-
-
-		// only look at the end of the file
-		try
-		{
-			if (CtrailProps.getInstance().getSkipAheadInBytes() <= 0)
-				return;
-
-			if (_file.length() > CtrailProps.getInstance().getSkipAheadInBytes())
-			{
-				long advacneBy = _file.length() - CtrailProps.getInstance().getSkipAheadInBytes();
-				_logger.trace("advancing file:{} to position:{}, size:{}", _fileName, advacneBy, _file.length());
-				_lastReadPosition = advacneBy;
-			}
-			_file.seek(_lastReadPosition);
-		}
-		catch (IOException ex_)
-		{
-			_logger.error(ex_.toString());
-		}
-	}
+    @Getter
+    FileSearchFilter _fileSearchFilter;
 
 
 
 
 
-	public void setFileSearchTerms(FileSearchFilter fst_)
-	{
-		if (CtrailProps.getInstance().isEnabledFileFiltering())
-		{
-			_fileSearchFilter = fst_;
-		}
-		else
-		{
-			_logger.debug("file serach terms disabled, not setting:{}", fst_.toString());
-		}
-	}
+    public FileTailTracker(@NonNull final String fname_, @NonNull final RandomAccessFile file_)
+    {
+        _fileName = fname_;
+        if (StringUtils.isEmpty(_fileName))
+        {
+            _fileName = file_.toString();
+        }
+        setFile(file_);
+        _logger.info("Filetracker for:{}", _fileName);
+
+
+        // only look at the end of the file
+        try
+        {
+            if (CtrailProps.getInstance().getSkipAheadInBytes() <= 0)
+            {
+                return;
+            }
+
+            if (_file.length() > CtrailProps.getInstance().getSkipAheadInBytes())
+            {
+                final long advacneBy = _file.length() - CtrailProps.getInstance().getSkipAheadInBytes();
+                _logger.trace("advancing file:{} to position:{}, size:{}", _fileName, advacneBy, _file.length());
+                _lastReadPosition = advacneBy;
+            }
+            _file.seek(_lastReadPosition);
+        }
+        catch (final IOException ex_)
+        {
+            _logger.error(ex_.toString());
+        }
+    }
 
 
 
 
 
-	@Override
-	public String toString()
-	{
-		return _fileName;
-	}
+    public void setFileSearchTerms(final FileSearchFilter fst_)
+    {
+        if (CtrailProps.getInstance().isEnabledFileFiltering())
+        {
+            _fileSearchFilter = fst_;
+        }
+        else
+        {
+            _logger.debug("file serach terms disabled, not setting:{}", fst_.toString());
+        }
+    }
+
+
+
+
+
+    @Override
+    public String toString()
+    {
+        return _fileName;
+    }
 
 }
