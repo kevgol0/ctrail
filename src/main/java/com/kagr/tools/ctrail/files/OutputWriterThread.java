@@ -99,12 +99,30 @@ public class OutputWriterThread extends Thread
             _logger.debug("outside of standard runloop, will consume remaining messages:{}", sz);
         }
 
-
-        while (sz-- > 0)
+        LogLine line = null;
+        while (sz > 0)
         {
+            sz -= 1;
             try
             {
-                _sout.println(_formatter.format(_output.pollLast(1, TimeUnit.MILLISECONDS)));
+                //
+                // latest entry - don't wait forever
+                //
+                line = _output.pollLast(1, TimeUnit.MILLISECONDS);
+                if (line == null)
+                {
+                    if (_logger.isTraceEnabled())
+                    {
+                        _logger.trace("poll-timeout, breaking out of loop");
+                    }
+                    break;
+                }
+
+
+                //
+                // show
+                //
+                _sout.println(_formatter.format(line));
                 if (_logger.isTraceEnabled())
                 {
                     _logger.trace("emptying q:{}", sz);
@@ -132,7 +150,7 @@ public class OutputWriterThread extends Thread
         {
             _logger.debug("sc:{}, interrupt:{}", sc_, shouldInterrupt_);
         }
-        
+
         _shouldContinue = sc_;
         if (!_shouldContinue && shouldInterrupt_)
         {
