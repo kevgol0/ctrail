@@ -15,8 +15,7 @@ package com.kagr.tools.ctrail.files;
 
 import java.io.PrintStream;
 import java.util.concurrent.BlockingDeque;
-
-
+import java.util.concurrent.TimeUnit;
 
 import com.kagr.tools.ctrail.unit.LineFormatter;
 import com.kagr.tools.ctrail.unit.LogLine;
@@ -38,6 +37,7 @@ public class OutputWriterThread extends Thread
     @Getter
     @Setter(AccessLevel.PRIVATE)
     BlockingDeque<LogLine> _output;
+
     @Getter
     @Setter
     PrintStream _sout;
@@ -54,6 +54,7 @@ public class OutputWriterThread extends Thread
 
     public OutputWriterThread(@NonNull final BlockingDeque<LogLine> output_, @NonNull final PrintStream out_)
     {
+        super("output-writter");
         setOutput(output_);
         setSout(out_);
         _shouldContinue = true;
@@ -88,15 +89,22 @@ public class OutputWriterThread extends Thread
         }
 
 
+
         // remove the rest of the entries from the q
         // however, use the pending size (in case someone 
         // else keeps adding to it) - this has been marked as close
         int sz = _output.size() - 1;
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("outside of standard runloop, will consume remaining messages:{}", sz);
+        }
+
+
         while (sz-- > 0)
         {
             try
             {
-                _sout.println(_formatter.format(_output.take()));
+                _sout.println(_formatter.format(_output.pollLast(1, TimeUnit.MILLISECONDS)));
                 if (_logger.isTraceEnabled())
                 {
                     _logger.trace("emptying q:{}", sz);
@@ -120,11 +128,16 @@ public class OutputWriterThread extends Thread
 
     public synchronized void setShouldContinue(final boolean sc_, final boolean shouldInterrupt_)
     {
-
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("sc:{}, interrupt:{}", sc_, shouldInterrupt_);
+        }
+        
         _shouldContinue = sc_;
         if (!_shouldContinue && shouldInterrupt_)
         {
-            Thread.currentThread().interrupt();
+            _logger.trace("about to interrupt");
+            interrupt();
         }
     }
 

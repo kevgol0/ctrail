@@ -90,15 +90,18 @@ public class StdinReaderThread implements Runnable
                 }
             }
 
-            _outThread.setShouldContinue(false, true);
-            if (_logger.isTraceEnabled())
-            {
-                _logger.trace("finished read from std-in");
-            }
+
         }
         catch (final Exception ex_)
         {
             _logger.error(ex_.toString());
+        }
+
+
+        _outThread.setShouldContinue(false, true);
+        if (_logger.isTraceEnabled())
+        {
+            _logger.trace("finished read from std-in");
         }
     }
 

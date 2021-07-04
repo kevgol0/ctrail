@@ -94,6 +94,7 @@ public class CtrailEntryPoint
         if (_fileTrackers.size() <= 0)
         {
             _reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern, _writer));
+            _reader.setName("istream-reader");
         }
         else
         {
