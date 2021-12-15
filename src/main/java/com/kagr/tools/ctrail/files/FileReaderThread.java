@@ -17,16 +17,14 @@ import java.io.IOException;
 import java.util.Deque;
 import java.util.concurrent.BlockingDeque;
 
-
-
+import com.kagr.tools.ctrail.IShutdownManager;
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
 import com.kagr.tools.ctrail.unit.LogLine;
 
-
-
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,12 +38,15 @@ public class FileReaderThread implements Runnable
     @Getter
     @Setter(AccessLevel.PRIVATE)
     private BlockingDeque<FileTailTracker> _fileTrackers;
+
     @Getter
     @Setter(AccessLevel.PRIVATE)
     private Deque<LogLine> _output;
+
     @Getter
     @Setter
     private int _maxLinesPerThread;
+
     @Getter
     @Setter
     private boolean _defLineExclude;
@@ -56,12 +57,13 @@ public class FileReaderThread implements Runnable
     private String _match;
 
     private final CtrailProps _props;
+    private final IShutdownManager _ender;
 
 
 
 
 
-    public FileReaderThread(final BlockingDeque<FileTailTracker> fileTrackers_, final Deque<LogLine> strOutput_, final String match_)
+    public FileReaderThread(@NonNull final BlockingDeque<FileTailTracker> fileTrackers_, final @NonNull Deque<LogLine> strOutput_, final String match_, final @NonNull IShutdownManager smgr_)
     {
         _props = CtrailProps.getInstance();
         setFileTrackers(fileTrackers_);
@@ -69,6 +71,8 @@ public class FileReaderThread implements Runnable
         setMatch(match_);
         setMaxLinesPerThread(CtrailProps.getInstance().getMaxProcessingLinesPerThread());
         setDefLineExclude(!CtrailProps.getInstance().isFileFilterDefaultsToInclude());
+
+        _ender = smgr_;
     }
 
 
@@ -80,7 +84,7 @@ public class FileReaderThread implements Runnable
     {
         long szToRead;
         FileTailTracker tracker;
-        final int nFiles = _fileTrackers.size();
+        int nFiles = _fileTrackers.size();
         int nEmptyItrCnt = 0;
         final int sleepTime = _props.getNoChangeSleepTimeMillis();
         while (true)
@@ -97,13 +101,16 @@ public class FileReaderThread implements Runnable
 
 
                 //
-                // check for advancements 
+                // check for advancements... if there is a 
+                // failure in file ptr, then this file will 
+                // not be added back into the queue...
                 //
-                szToRead = tracker.getFile().length() - tracker.getLastReadPosition();
+                szToRead = tracker.getRemainingSize();
                 if (szToRead > 0)
                 {
                     nEmptyItrCnt = 0;
 
+                    // there is more data to read, do so...
                     // if this fails, (meaning there was a file read error)
                     // then the file will not return unto the queue...
                     readToFilePosition(tracker);
@@ -140,14 +147,21 @@ public class FileReaderThread implements Runnable
             }
             catch (final IOException ex_)
             {
+                // either a ptr-seek, or file read error happened
+                // ither way, there is one less file to read from..
+                nFiles -= 1;
+
+                // show the error
                 _logger.error(ex_.toString());
+
+                // am I done?
                 if (_fileTrackers.size() <= 0)
                 {
                     _logger.warn("I/O error resulted in no additional files for processing, breaking out of read-loop");
+                    _ender.initiateShutdown();
                     break;
                 }
             }
-
         }
     }
 
@@ -155,7 +169,7 @@ public class FileReaderThread implements Runnable
 
 
 
-    private int readToFilePosition(final FileTailTracker tracker_) throws IOException
+    private final int readToFilePosition(final FileTailTracker tracker_) throws IOException
     {
         long readPos = tracker_.getFile().getFilePointer();
         int nReadLines = 0;
@@ -204,7 +218,7 @@ public class FileReaderThread implements Runnable
 
 
 
-    private boolean shouldExcludeLineDueToSeachTerms(final String line_, final FileSearchFilter fileSearchTerms_)
+    private final boolean shouldExcludeLineDueToSeachTerms(final String line_, final FileSearchFilter fileSearchTerms_)
     {
         //
         // see if this file has FileSearchTerms specified

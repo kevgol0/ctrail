@@ -18,11 +18,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Deque;
 
-
-
+import com.kagr.tools.ctrail.IShutdownManager;
 import com.kagr.tools.ctrail.unit.LogLine;
-
-
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -44,22 +41,22 @@ public class StdinReaderThread implements Runnable
     private Deque<LogLine> _output;
 
     @Getter
-    @Setter(AccessLevel.PRIVATE)
-    private String _match;
+    private final String _match;
 
     @Getter
-    private final OutputWriterThread _outThread;
+    private final IShutdownManager _ender;
 
 
 
 
 
-    public StdinReaderThread(final InputStream is_, @NonNull final Deque<LogLine> output_, final String match_, @NonNull final OutputWriterThread outThread_)
+    public StdinReaderThread(final InputStream is_, @NonNull final Deque<LogLine> output_, final String match_, final IShutdownManager shutdownMgr_)
     {
         _iStream = is_;
+        _match = match_;
+        _ender = shutdownMgr_;
+        
         setOutput(output_);
-        setMatch(match_);
-        _outThread = outThread_;
     }
 
 
@@ -89,20 +86,23 @@ public class StdinReaderThread implements Runnable
                     }
                 }
             }
-
-
         }
         catch (final Exception ex_)
         {
             _logger.error(ex_.toString());
         }
 
-
-        _outThread.setShouldContinue(false, true);
         if (_logger.isTraceEnabled())
         {
             _logger.trace("finished read from std-in");
         }
+
+
+        //
+        // stop the output thread as 
+        // soon as they finish processing
+        //
+        _ender.initiateShutdown();
     }
 
 }

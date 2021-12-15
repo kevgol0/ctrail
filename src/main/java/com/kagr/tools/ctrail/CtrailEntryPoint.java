@@ -1,6 +1,10 @@
 /****************************************************************************
  * FILE: CtrailEntryPoint.java
  * DSCRPT: 
+ * 
+ * this only has 2 threads:
+ * 1) output to terminal
+ * 2) reading from files (or stdin)
  ****************************************************************************/
 
 
@@ -51,13 +55,14 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
-public class CtrailEntryPoint
+public class CtrailEntryPoint implements IShutdownManager
 {
     private Thread _reader;
-    private OutputWriterThread _writer;
-    private final BlockingDeque<LogLine> _output;
+    private Thread _writer;
+    private BlockingDeque<LogLine> _output;
     private BlockingDeque<FileTailTracker> _fileTrackers;
     private String _matchpattern;
+    private final Object _runtimeHolder;
 
 
 
@@ -70,35 +75,41 @@ public class CtrailEntryPoint
         // 
         loadProps();
         final String[] remainingArgs = loadArgsAndOverrides(args_);
-
-
+        _runtimeHolder = new Object();
 
 
         //
-        // start them up
+        // terminal writer
         //
-        _output = new LinkedBlockingDeque<LogLine>(CtrailProps.getInstance().getMaxPendingLines());
-        _fileTrackers = new LinkedBlockingDeque<FileTailTracker>(CtrailProps.getInstance().getMaxNbrInputFiles());
-        initWriterThreads();
-        initReaderThreads(remainingArgs);
+        initConsoleWriterThread();
 
+
+        //
+        // readers
+        //
+        initInputReaderThread(remainingArgs);
     }
 
 
 
 
 
-    private void initReaderThreads(final String[] args_)
+    private void initInputReaderThread(final String[] args_)
     {
+        if (_output == null)
+        {
+            throw new RuntimeException("Sytem not ready, initReaderThread called with no output mechanism");
+        }
+
         _fileTrackers = getFilesFromArgs(args_);
         if (_fileTrackers.size() <= 0)
         {
-            _reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern, _writer));
+            _reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern, this));
             _reader.setName("istream-reader");
         }
         else
         {
-            _reader = new Thread(new FileReaderThread(_fileTrackers, _output, _matchpattern));
+            _reader = new Thread(new FileReaderThread(_fileTrackers, _output, _matchpattern, this));
         }
 
         _reader.start();
@@ -108,8 +119,9 @@ public class CtrailEntryPoint
 
 
 
-    private void initWriterThreads()
+    private void initConsoleWriterThread()
     {
+        _output = new LinkedBlockingDeque<LogLine>(CtrailProps.getInstance().getMaxPendingLines());
         _writer = new OutputWriterThread(_output, System.out);
         _writer.start();
     }
@@ -250,23 +262,60 @@ public class CtrailEntryPoint
 
 
 
-    protected void start(final int millis_)
+    protected void start(int millis_)
     {
-
         try
         {
-            synchronized (_writer)
+            synchronized (_runtimeHolder)
             {
-                if (!_writer.isShouldContinue() && _writer.getOutput().size() <= 0)
+                if (millis_ > 0)
                 {
-                    return;
+                    _runtimeHolder.wait(millis_);
                 }
-                _writer.wait(100);
+                else
+                {
+                    _runtimeHolder.wait();
+                }
             }
+
+            return;
         }
         catch (final InterruptedException ex_)
         {
             _logger.error(ex_.toString());
+        }
+    }
+
+
+
+
+
+    @Override
+    public void initiateShutdown()
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("starting shutdown process...");
+        }
+        
+        if (_writer != null)
+        {
+            if (_writer instanceof OutputWriterThread)
+            {
+                ((OutputWriterThread) _writer).setShouldContinue(false, false);
+            }
+        }
+
+        try
+        {
+            synchronized (_runtimeHolder)
+            {
+                _runtimeHolder.notifyAll();
+            }
+        }
+        catch (Exception ex_)
+        {
+            _logger.error(ex_.toString(), ex_);
         }
     }
 
@@ -279,9 +328,4 @@ public class CtrailEntryPoint
         final CtrailEntryPoint trailer = new CtrailEntryPoint(args_);
         trailer.start(0);
     }
-
-
-
-
-
 }

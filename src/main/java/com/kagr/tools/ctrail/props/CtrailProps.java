@@ -141,6 +141,7 @@ public class CtrailProps
                 .setEncoding("UTF-8")
                 .setListDelimiterHandler(new DefaultListDelimiterHandler(';'))
                 .setValidating(false)
+                
                 .setFileName(propsFileName));
         try
         {

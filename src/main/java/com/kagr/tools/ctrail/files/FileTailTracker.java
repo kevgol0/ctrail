@@ -42,6 +42,7 @@ public class FileTailTracker
     @Getter
     @Setter
     private RandomAccessFile _file;
+    
     @Getter
     @Setter
     private long _lastReadPosition;
@@ -103,6 +104,15 @@ public class FileTailTracker
         {
             _logger.debug("file serach terms disabled, not setting:{}", fst_.toString());
         }
+    }
+
+
+
+
+
+    public final long getRemainingSize() throws IOException
+    {
+        return _file.length() - getLastReadPosition();
     }
 
 

@@ -120,7 +120,19 @@ public class StdCtrTest
         {
             final byte[] expected = Files.readAllBytes(expectedFile_);
             final byte[] actual = Files.readAllBytes(getTempFilePath());
-            return Arrays.equals(expected, actual);
+
+            boolean rv = Arrays.equals(expected, actual);
+            if (!rv)
+            {
+                for (int i = 0; i < expected.length; i++)
+                {
+                    if (expected[i] != actual[i])
+                    {
+                        System.err.println("i:" + i + ", expected=[" + expected[i] + "], actual=[" + actual[i] + "]");
+                    }
+                }
+            }
+            return rv;
         }
         catch (final IOException ex_)
         {
