@@ -124,13 +124,7 @@ public class StdCtrTest
             boolean rv = Arrays.equals(expected, actual);
             if (!rv)
             {
-                for (int i = 0; i < expected.length; i++)
-                {
-                    if (expected[i] != actual[i])
-                    {
-                        System.err.println("i:" + i + ", expected=[" + expected[i] + "], actual=[" + actual[i] + "]");
-                    }
-                }
+                //.showArrayDiffs(actual, expected);
             }
             return rv;
         }
@@ -141,4 +135,22 @@ public class StdCtrTest
 
         return false;
     }
+
+
+
+
+
+    public void showArrayDiffs(final byte[] lhs_, final byte[] rhs_)
+    {
+        for (int i = 0; i < lhs_.length && i < rhs_.length; i++)
+        {
+            if (lhs_[i] != rhs_[i])
+            {
+                System.out.println("i:" + i + ", rsb=" + lhs_[i] + ", exb=" + rhs_[i]);
+            }
+
+
+        }
+    }
+
 }

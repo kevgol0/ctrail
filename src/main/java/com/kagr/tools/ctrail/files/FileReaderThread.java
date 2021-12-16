@@ -160,10 +160,18 @@ public class FileReaderThread implements Runnable
                 if (_fileTrackers.size() <= 0)
                 {
                     _logger.warn("I/O error resulted in no additional files for processing, breaking out of read-loop");
-                    _ender.initiateShutdown();
                     break;
                 }
             }
+        }
+
+
+        //
+        // initiate shutdown
+        //
+        if (_ender != null)
+        {
+            _ender.initiateShutdown();
         }
     }
 
@@ -220,7 +228,7 @@ public class FileReaderThread implements Runnable
 
 
 
-    private final boolean shouldExcludeLineDueToSeachTerms(final String line_, final FileSearchFilter fileSearchTerms_)
+    protected final boolean shouldExcludeLineDueToSeachTerms(final String line_, final FileSearchFilter fileSearchTerms_)
     {
         //
         // see if this file has FileSearchTerms specified

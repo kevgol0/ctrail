@@ -151,6 +151,11 @@ public class OutputWriterThread extends Thread
             _logger.debug("sc:{}, interrupt:{}", sc_, shouldInterrupt_);
         }
 
+        if (_shouldContinue == sc_)
+        {
+            return;
+        }
+
         _shouldContinue = sc_;
         if (!_shouldContinue && shouldInterrupt_)
         {

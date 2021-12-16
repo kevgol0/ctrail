@@ -29,6 +29,8 @@
   </execution>
 
 
+  <!-- order matters, not order on the line, but the order of the 
+       words configured -->
   <coloring>
     <!-- case sensitivity -->
 
@@ -64,18 +66,20 @@
 
       <defaultFgColor>white</defaultFgColor>
 
-      <colorpair>
-        <keyword>(DBG)</keyword>
-        <fgcolor>blue</fgcolor>
-        <flcolor>yellow</flcolor>
-      </colorpair>
-
 
       <colorpair>
         <keyword>(INF)</keyword>
         <fgcolor>yellow</fgcolor>
         <flcolor>blue_underlined</flcolor>
       </colorpair>
+      
+      
+      <colorpair>
+        <keyword>(DBG)</keyword>
+        <fgcolor>blue</fgcolor>
+        <flcolor>yellow</flcolor>
+      </colorpair>
+      
 
       <colorpair>
         <keyword>(ERR)</keyword>

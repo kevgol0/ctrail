@@ -55,7 +55,7 @@ public class StdinReaderThread implements Runnable
         _iStream = is_;
         _match = match_;
         _ender = shutdownMgr_;
-        
+
         setOutput(output_);
     }
 

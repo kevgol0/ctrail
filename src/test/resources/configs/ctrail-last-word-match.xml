@@ -74,13 +74,13 @@
       <colorpair>
         <keyword>(INF)</keyword>
         <fgcolor>yellow</fgcolor>
-        <flcolor>blue_underlined</flcolor>
+        <flcolor>yellow_underlined</flcolor>
       </colorpair>
 
       <colorpair>
         <keyword>(ERR)</keyword>
         <fgcolor>red</fgcolor>
-        <flcolor>blue</flcolor>
+        <flcolor>blue_underlined</flcolor>
       </colorpair>
 
       <colorpair>
