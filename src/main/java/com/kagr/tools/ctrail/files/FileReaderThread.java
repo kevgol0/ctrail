@@ -63,16 +63,18 @@ public class FileReaderThread implements Runnable
 
 
 
-    public FileReaderThread(@NonNull final BlockingDeque<FileTailTracker> fileTrackers_, final @NonNull Deque<LogLine> strOutput_, final String match_, final @NonNull IShutdownManager smgr_)
+    public FileReaderThread(@NonNull final BlockingDeque<FileTailTracker> fileTrackers_,
+                            @NonNull final Deque<LogLine> strOutput_,
+                            final String match_,
+                            @NonNull final IShutdownManager smgr_)
     {
         _props = CtrailProps.getInstance();
+        _ender = smgr_;
         setFileTrackers(fileTrackers_);
         setOutput(strOutput_);
         setMatch(match_);
         setMaxLinesPerThread(CtrailProps.getInstance().getMaxProcessingLinesPerThread());
         setDefLineExclude(!CtrailProps.getInstance().isFileFilterDefaultsToInclude());
-
-        _ender = smgr_;
     }
 
 

@@ -29,15 +29,6 @@ public class ConsoleColors
     public static final String CYAN = "\033[0;36m";    // CYAN
     public static final String WHITE = "\033[0;37m";   // WHITE
 
-    /*public static final String RED = "_RD_";     // RED
-    public static final String GREEN = "_GR_";   // GREEN
-    public static final String YELLOW = "_YL_";  // YELLOW
-    public static final String BLUE = "_BE_";    // BLUE
-    public static final String PURPLE = "_PU_";  // PURPLE
-    public static final String CYAN = "_CY_";    // CYAN
-    public static final String WHITE = "_WH_";   // WHITE
-    public static final String BLACK = "_BL_";   // BLACK*/
-
     // Bold
     public static final String BLACK_BOLD = "\033[1;30m";  // BLACK
     public static final String RED_BOLD = "\033[1;31m";    // RED
@@ -57,15 +48,6 @@ public class ConsoleColors
     public static final String PURPLE_UNDERLINED = "\033[4;35m"; // PURPLE
     public static final String CYAN_UNDERLINED = "\033[4;36m";   // CYAN
     public static final String WHITE_UNDERLINED = "\033[4;37m";  // WHITE
-
-    /*public static final String BLACK_UNDERLINED = "_BLU_";  // BLACK
-    public static final String RED_UNDERLINED = "_RDU_";    // RED
-    public static final String GREEN_UNDERLINED = "_GRU_";  // GREEN
-    public static final String YELLOW_UNDERLINED = "_YLU_"; // YELLOW
-    public static final String BLUE_UNDERLINED = "_BEU_";   // BLUE
-    public static final String PURPLE_UNDERLINED = "_PUU_"; // PURPLE
-    public static final String CYAN_UNDERLINED = "_CYU_";   // CYAN
-    public static final String WHITE_UNDERLINED = "_WHU_";  // WHITE*/
 
     // Background
     public static final String BLACK_BACKGROUND = "\033[40m";  // BLACK

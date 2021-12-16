@@ -53,19 +53,25 @@ import lombok.extern.slf4j.Slf4j;
 public class CtrailProps
 {
 
-    private static final String CTRAIL_XML = "ctrail.xml";
+    public static final String CTRAIL_XML = "ctrail.xml";
+    public static final String CTRAIL_CFG_KEY = "CTRAIL_CFG";
+
     @Getter
     @Setter
     private int _maxNbrInputFiles = 100;
+
     @Getter
     @Setter
     private int _maxProcessingLinesPerThread = 1000;
+
     @Getter
     @Setter
     private int _maxPendingLines = 100000;
+
     @Getter
     @Setter
     private int _skipAheadInBytes = 1000;
+
     @Getter
     @Setter
     private int _noChangeSleepTimeMillis = 100;
@@ -73,35 +79,44 @@ public class CtrailProps
     @Getter
     @Setter
     private boolean _lineSearchCaseSensitiveMatching = false;
+
     @Getter
     @Setter
     private boolean _prependFilenameToLine = true;
+
     @Getter
     @Setter
     private boolean _blankLineOnFileChange = false;
+
     @Getter
     @Setter
     private boolean _matchFirstWord = true;
+
     @Getter
     @Setter
     private boolean _enabledFileFiltering = true;
+
     @Getter
     @Setter
     private boolean _fileFilterDefaultsToInclude = true;
 
-
     @Getter
     @Setter
     private String _defaultFgColor = "white";
+
     @Getter
     @Setter
     private String _defaultFlColor = "";
+
     @Getter
     private final Hashtable<String, String> _keysToColors;
+
     @Getter
     private final Hashtable<String, String> _keysToFileColors;
+
     @Getter
     private final Hashtable<String, FileSearchFilter> _fileSearchFilters;
+
     @Getter
     private final LinkedList<String> _keys;
 
@@ -141,7 +156,7 @@ public class CtrailProps
                 .setEncoding("UTF-8")
                 .setListDelimiterHandler(new DefaultListDelimiterHandler(';'))
                 .setValidating(false)
-                
+
                 .setFileName(propsFileName));
         try
         {
@@ -186,7 +201,7 @@ public class CtrailProps
         int filterCfgSz = 0;
         try
         {
-            filterCfgSz = extractCount(config_, "filtering.filefilter.filename");//((Collection<?>) config_.getProperty("filtering.filefilter.filename")).size();
+            filterCfgSz = extractCount(config_, "filtering.filefilter.filename");
             _logger.trace("total number of line colors found:{}", filterCfgSz);
         }
         catch (final Exception ex_)
@@ -426,9 +441,11 @@ public class CtrailProps
                 return ConsoleColors.CYAN_UNDERLINED;
             case "WHITE_UNDERLINED":
                 return ConsoleColors.WHITE_UNDERLINED;
+            default:
+                _logger.warn("color:{} not regognized, returning null");
         }
 
-        _logger.warn("color:{} not regognized, returning null");
+
         return null;
     }
 
@@ -439,7 +456,7 @@ public class CtrailProps
     private static String getConfigFile()
     {
         Path cfgFilePath;
-        final String cfgOverride = System.getProperty("CTRAIL_CFG");
+        final String cfgOverride = System.getProperty(CTRAIL_CFG_KEY);
         if (!StringUtils.isEmpty(cfgOverride))
         {
             cfgFilePath = Paths.get(cfgOverride);
