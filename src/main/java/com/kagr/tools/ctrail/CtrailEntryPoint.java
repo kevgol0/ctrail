@@ -95,7 +95,7 @@ public class CtrailEntryPoint implements IShutdownManager
     {
         if (_output == null)
         {
-            throw new RuntimeException("Sytem not ready, initReaderThread called with no output mechanism");
+            throw new RuntimeException("System not ready, initReaderThread called with no output mechanism");
         }
 
         _fileTrackers = getFilesFromArgs(args_);
