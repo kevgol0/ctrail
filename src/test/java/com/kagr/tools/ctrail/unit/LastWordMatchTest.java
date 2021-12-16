@@ -7,7 +7,7 @@
 
 
 
-package com.kagr.tools.ctrail;
+package com.kagr.tools.ctrail.unit;
 
 
 
@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.kagr.tools.ctrail.ConsoleColors;
+import com.kagr.tools.ctrail.StdCtrTest;
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.unit.LineFormatter;
 import com.kagr.tools.ctrail.unit.LogLine;
@@ -31,12 +33,12 @@ import com.kagr.tools.ctrail.unit.LogLine;
 
 
 
-public class FirstWordMatchTest extends StdCtrTest
+public class LastWordMatchTest extends StdCtrTest
 {
     @Test
     public void testWithLastWordMatch()
     {
-        System.setProperty(CtrailProps.CTRAIL_CFG_KEY, Paths.get(".", "src", "test", "resources", "configs", "ctrail-first-word-match.xml").toString());
+        System.setProperty(CtrailProps.CTRAIL_CFG_KEY, Paths.get(".", "src", "test", "resources", "configs", "ctrail-last-word-match.xml").toString());
         CtrailProps props = CtrailProps.getInstance();
 
         LineFormatter formatter = new LineFormatter();
@@ -46,11 +48,9 @@ public class FirstWordMatchTest extends StdCtrTest
 
         String resultStr = formatter.format(line);
         String expected = ConsoleColors.BLUE_UNDERLINED + filename + ":" +
-                ConsoleColors.YELLOW + str + ConsoleColors.RESET;
+                ConsoleColors.RED + str + ConsoleColors.RESET;
 
-        System.out.println("result: " + resultStr);
-        System.out.println("expected: " + expected);
-        
         assertEquals(expected, resultStr);
+
     }
 }

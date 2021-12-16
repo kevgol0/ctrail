@@ -7,7 +7,7 @@
 
 
 
-package com.kagr.tools.ctrail;
+package com.kagr.tools.ctrail.unit;
 
 
 
@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.kagr.tools.ctrail.ConsoleColors;
+import com.kagr.tools.ctrail.StdCtrTest;
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.unit.LineFormatter;
 import com.kagr.tools.ctrail.unit.LogLine;

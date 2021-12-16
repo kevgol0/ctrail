@@ -110,7 +110,6 @@
           <forkMode>always</forkMode>
           <reuseForks>false</reuseForks>
           <systemPropertyVariables>
-            <log4j.configuration>file:${project.basedir}/src/test/resources/log4j.console</log4j.configuration>
             <logback.configurationFile>file:${project.basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
           </systemPropertyVariables>
         </configuration>

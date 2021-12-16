@@ -1,7 +1,7 @@
 <configuration debug="false">
     <logger name="org.apache" level="OFF" additive="false" />
     <logger name="org.apache.commons" level="OFF" additive="false" />
-    <logger name="com.kagr.tools.ctrail" level="TRACE" additive="false" />
+    
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>false</withJansi>
         <encoder>
@@ -10,7 +10,7 @@
             </pattern>
         </encoder>
     </appender>
-    <root level="TRACE">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
