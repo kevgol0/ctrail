@@ -13,14 +13,13 @@ package com.kagr.tools.ctrail;
 
 
 
+import static org.junit.Assert.assertEquals;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-
-
+import org.junit.Ignore;
 import org.junit.Test;
-
-
 
 import com.kagr.tools.ctrail.props.CtrailProps;
 
@@ -30,10 +29,11 @@ import com.kagr.tools.ctrail.props.CtrailProps;
 
 public class MaxFilesTest
 {
-
     @Test
     public void test()
     {
+        System.setProperty(CtrailProps.CTRAIL_CFG_KEY, "./etc/ctrail.xml");
+        CtrailProps.getInstance();
         final CtrailProps props = CtrailProps.getInstance();
         props.setMaxNbrInputFiles(1);
         final Path p = Paths.get(".", "src", "test", "resources", "sources", "test.log");
@@ -45,7 +45,7 @@ public class MaxFilesTest
         };
 
         final CtrailEntryPoint ep = new CtrailEntryPoint(args);
-        ep.start(100);
+        assertEquals(1, ep.getFileTrackers().size(), 0);
     }
 
 }
