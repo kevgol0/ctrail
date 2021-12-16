@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kagr.tools</groupId>
   <artifactId>ctrail</artifactId>
-  <version>0.0.9</version>
+  <version>1.0.0</version>
 
 
   <properties>
@@ -108,6 +108,7 @@
         </dependencies>
         <configuration>
           <forkMode>always</forkMode>
+          <reuseForks>false</reuseForks>
           <systemPropertyVariables>
             <log4j.configuration>file:${project.basedir}/src/test/resources/log4j.console</log4j.configuration>
             <logback.configurationFile>file:${project.basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
