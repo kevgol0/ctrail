@@ -59,7 +59,7 @@ public class FileSearchFilter
 
 
 
-    private @NonNull String toRegEx(final String fileName_)
+    private final String toRegEx(final String fileName_)
     {
         final StringBuilder buff = new StringBuilder();
         char val;
@@ -80,7 +80,7 @@ public class FileSearchFilter
             }
         }
 
-
+        buff.append("$");
         return buff.toString();
     }
 
@@ -88,12 +88,12 @@ public class FileSearchFilter
 
 
 
-    public boolean doesMatchFilename(@NonNull final String fname_)
+    public final boolean doesMatchFilename(@NonNull final String fname_)
     {
         boolean rv = false;
         try
         {
-            final Pattern p = Pattern.compile(_fileName);
+            final Pattern p = Pattern.compile(".*" + _fileName);
             final Matcher m = p.matcher(fname_);
             rv = m.find();
             if (_logger.isDebugEnabled())
