@@ -295,6 +295,21 @@ public class CtrailEntryPoint implements IShutdownManager
 
 
 
+    /**
+     * awaits indefinitely.
+     */
+    protected void awaitShutdownInstruction()
+    {
+        awaitShutdownInstruction(0);
+    }
+
+
+
+
+
+    /**
+     * millis_<=0 will await indefinitely.
+     */
     protected void awaitShutdownInstruction(int millis_)
     {
         try
@@ -338,6 +353,7 @@ public class CtrailEntryPoint implements IShutdownManager
         {
             _logger.trace("interrupting reader");
             _reader.interrupt();
+            _reader = null;
         }
 
 
@@ -353,6 +369,7 @@ public class CtrailEntryPoint implements IShutdownManager
                 _logger.trace("interrupting writer");
                 _writer.interrupt();
             }
+            _writer = null;
         }
     }
 
@@ -364,7 +381,7 @@ public class CtrailEntryPoint implements IShutdownManager
     {
         final CtrailEntryPoint trailer = new CtrailEntryPoint(args_);
         trailer.start();
-        trailer.awaitShutdownInstruction(0);
+        trailer.awaitShutdownInstruction();
         trailer.shutdown();
     }
 }
