@@ -26,8 +26,6 @@ import java.util.Iterator;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
-
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -35,8 +33,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
-
 
 import com.kagr.tools.ctrail.files.FileReaderThread;
 import com.kagr.tools.ctrail.files.FileTailTracker;
@@ -46,8 +42,7 @@ import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
 import com.kagr.tools.ctrail.unit.LogLine;
 
-
-
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -60,9 +55,11 @@ public class CtrailEntryPoint implements IShutdownManager
     private Thread _reader;
     private Thread _writer;
     private BlockingDeque<LogLine> _output;
-    private BlockingDeque<FileTailTracker> _fileTrackers;
     private String _matchpattern;
     private final Object _runtimeHolder;
+
+    @Getter
+    private BlockingDeque<FileTailTracker> _fileTrackers;
 
 
 
@@ -112,7 +109,7 @@ public class CtrailEntryPoint implements IShutdownManager
             _reader = new Thread(new FileReaderThread(_fileTrackers, _output, _matchpattern, this));
         }
 
-        _reader.start();
+
     }
 
 
@@ -123,7 +120,6 @@ public class CtrailEntryPoint implements IShutdownManager
     {
         _output = new LinkedBlockingDeque<LogLine>(CtrailProps.getInstance().getMaxPendingLines());
         _writer = new OutputWriterThread(_output, System.out);
-        _writer.start();
     }
 
 
@@ -153,7 +149,7 @@ public class CtrailEntryPoint implements IShutdownManager
                     continue;
                 }
 
-                if (cntr++ >= maxFileCnt)
+                if (cntr >= maxFileCnt)
                 {
                     _logger.warn("max number of files exceeded:{}, ignoring remaining files", cntr);
                     break;
@@ -162,6 +158,7 @@ public class CtrailEntryPoint implements IShutdownManager
                 final FileTailTracker ftracker = new FileTailTracker(filename, new RandomAccessFile(file, "r"));
                 findAndSetFileTracker(fstMap, filename, ftracker);
                 deq.add(ftracker);
+                cntr += 1;
             }
             catch (final Exception ex_)
             {
@@ -266,6 +263,14 @@ public class CtrailEntryPoint implements IShutdownManager
     {
         try
         {
+            if (_reader == null || _writer == null)
+            {
+                throw new RuntimeException("Reader/Writer not initialized correctly");
+            }
+
+            _reader.start();
+            _writer.start();
+
             synchronized (_runtimeHolder)
             {
                 if (millis_ > 0)
@@ -297,12 +302,27 @@ public class CtrailEntryPoint implements IShutdownManager
         {
             _logger.debug("starting shutdown process...");
         }
-        
+
+
+
+        if (_reader != null)
+        {
+            _logger.trace("interrupting reader");
+            _reader.interrupt();
+        }
+
+
         if (_writer != null)
         {
             if (_writer instanceof OutputWriterThread)
             {
+                _logger.trace("shutting down writer");
                 ((OutputWriterThread) _writer).setShouldContinue(false, false);
+            }
+            else
+            {
+                _logger.trace("interrupting writer");
+                _writer.interrupt();
             }
         }
 
