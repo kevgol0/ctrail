@@ -259,18 +259,47 @@ public class CtrailEntryPoint implements IShutdownManager
 
 
 
-    protected void start(int millis_)
+    @Override
+    public void initiateShutdown()
     {
         try
         {
-            if (_reader == null || _writer == null)
+            synchronized (_runtimeHolder)
             {
-                throw new RuntimeException("Reader/Writer not initialized correctly");
+                _runtimeHolder.notifyAll();
             }
+        }
+        catch (Exception ex_)
+        {
+            _logger.error(ex_.toString(), ex_);
+        }
+    }
 
-            _reader.start();
-            _writer.start();
 
+
+
+
+    protected void start()
+    {
+        if (_reader == null || _writer == null)
+        {
+            throw new RuntimeException("Reader/Writer not initialized correctly");
+        }
+
+        _logger.trace("strating worker threads");
+        _reader.start();
+        _writer.start();
+    }
+
+
+
+
+
+    protected void awaitShutdownInstruction(int millis_)
+    {
+        try
+        {
+            _logger.trace("awaiting shutdown instructions, millis-to-wait:{}", millis_);
             synchronized (_runtimeHolder)
             {
                 if (millis_ > 0)
@@ -282,22 +311,22 @@ public class CtrailEntryPoint implements IShutdownManager
                     _runtimeHolder.wait();
                 }
             }
-
-            return;
         }
-        catch (final InterruptedException ex_)
+        catch (InterruptedException ex_)
         {
-            _logger.error(ex_.toString());
+            _logger.error(ex_.toString(), ex_);
         }
+
+        return;
     }
 
 
 
 
 
-    @Override
-    public void initiateShutdown()
+    protected void shutdown()
     {
+
         if (_logger.isDebugEnabled())
         {
             _logger.debug("starting shutdown process...");
@@ -325,18 +354,6 @@ public class CtrailEntryPoint implements IShutdownManager
                 _writer.interrupt();
             }
         }
-
-        try
-        {
-            synchronized (_runtimeHolder)
-            {
-                _runtimeHolder.notifyAll();
-            }
-        }
-        catch (Exception ex_)
-        {
-            _logger.error(ex_.toString(), ex_);
-        }
     }
 
 
@@ -346,6 +363,8 @@ public class CtrailEntryPoint implements IShutdownManager
     public static void main(final String[] args_)
     {
         final CtrailEntryPoint trailer = new CtrailEntryPoint(args_);
-        trailer.start(0);
+        trailer.start();
+        trailer.awaitShutdownInstruction(0);
+        trailer.shutdown();
     }
 }
