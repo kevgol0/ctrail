@@ -14,11 +14,23 @@ public class FileSearchFilterTest
 {
 
     @Test
-    public void test()
+    public void testBasic()
     {
         FileSearchFilter fsf = new FileSearchFilter("test.log");
         assertTrue(fsf.doesMatchFilename("/tmp/aa/bb/cc/dd/test.log"));
         assertFalse(fsf.doesMatchFilename("/tmp/aa/bb/cc/test.log/tt"));
+    }
+
+
+
+
+
+    @Test
+    public void testRegexFileName()
+    {
+        FileSearchFilter fsf = new FileSearchFilter("test*.log");
+        assertTrue(fsf.doesMatchFilename("/tmp/aa/bb/cc/dd/test12.log"));
+        assertFalse(fsf.doesMatchFilename("/tmp/aa/bb/cc/test12.log/tt"));
     }
 
 }
