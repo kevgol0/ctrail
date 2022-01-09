@@ -150,7 +150,7 @@ public class FileReaderThread implements Runnable
             catch (final IOException ex_)
             {
                 // either a ptr-seek, or file read error happened
-                // ither way, there is one less file to read from..
+                // either way, there is one less file to read from..
                 nFiles -= 1;
 
                 // show the error

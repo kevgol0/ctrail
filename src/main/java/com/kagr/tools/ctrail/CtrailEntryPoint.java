@@ -140,6 +140,14 @@ public class CtrailEntryPoint implements IShutdownManager
                 file = new File(s);
                 final Path p = Paths.get(s);
                 final String filename = p.getName(p.getNameCount() - 1).toString();
+                
+                if (cntr >= maxFileCnt)
+                {
+                    _logger.warn("max number of files exceeded:{}, ignoring remaining files", cntr);
+                    break;
+                }
+                
+                
                 if (!file.isFile() || !file.canRead())
                 {
                     if (_logger.isInfoEnabled())
@@ -149,12 +157,10 @@ public class CtrailEntryPoint implements IShutdownManager
                     continue;
                 }
 
-                if (cntr >= maxFileCnt)
-                {
-                    _logger.warn("max number of files exceeded:{}, ignoring remaining files", cntr);
-                    break;
-                }
-
+                
+                //
+                // good to go
+                //
                 final FileTailTracker ftracker = new FileTailTracker(filename, new RandomAccessFile(file, "r"));
                 findAndSetFileTracker(fstMap, filename, ftracker);
                 deq.add(ftracker);
