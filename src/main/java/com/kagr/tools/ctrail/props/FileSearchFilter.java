@@ -34,81 +34,76 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileSearchFilter
 {
-    @NonNull
-    @Getter
-    @Setter
-    private String _fileName;
+	@NonNull @Getter @Setter private String _fileName;
 
-    @Getter
-    private List<String> _includeTerms = new LinkedList<String>();
+	@Getter private List<String> _includeTerms = new LinkedList<String>();
 
-    @Getter
-    private List<String> _excldueTerms = new LinkedList<String>();
+	@Getter private List<String> _excldueTerms = new LinkedList<String>();
 
 
 
 
 
-    public FileSearchFilter(final String fileName_)
-    {
-        _fileName = toRegEx(fileName_);
-        _logger.debug("filename:{}, results in:{}", fileName_, _fileName);
-    }
+	public FileSearchFilter(final String fileName_)
+	{
+		_fileName = toRegEx(fileName_);
+		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
+	}
 
 
 
 
 
-    private final String toRegEx(final String fileName_)
-    {
-        final StringBuilder buff = new StringBuilder();
-        char val;
-        for (int i = 0; i < fileName_.length(); i++)
-        {
-            val = fileName_.charAt(i);
-            switch (val)
-            {
-                case '*':
-                    buff.append("(.)*");
-                    break;
-                case '.':
-                    buff.append("\\.");
-                    break;
-                default:
-                    buff.append(val);
-                    break;
-            }
-        }
+	private final String toRegEx(final String fileName_)
+	{
+		final StringBuilder buff = new StringBuilder();
+		char val;
+		for (int i = 0; i < fileName_.length(); i++)
+		{
+			val = fileName_.charAt(i);
+			switch (val)
+			{
+			case '*':
+				buff.append("(.)*");
+				break;
+			case '.':
+				buff.append("\\.");
+				break;
+			default:
+				buff.append(val);
+				break;
+			}
+		}
 
-        buff.append("$");
-        return buff.toString();
-    }
-
-
+		buff.append("$");
+		return buff.toString();
+	}
 
 
 
-    public final boolean doesMatchFilename(@NonNull final String fname_)
-    {
-        boolean rv = false;
-        try
-        {
-            final Pattern p = Pattern.compile(".*" + _fileName);
-            final Matcher m = p.matcher(fname_);
-            rv = m.find();
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("{} matches {}:{}", _fileName, fname_, rv);
-            }
 
-            //rv = FileUtils.
-        }
-        catch (final Exception ex_)
-        {
-            _logger.error(ex_.toString());
-        }
-        return rv;
-    }
+
+	public final boolean doesMatchFilename(@NonNull final String fname_)
+	{
+		boolean rv = false;
+		try
+		{
+			final Pattern p = Pattern.compile(".*" + _fileName);
+			final Matcher m = p.matcher(fname_);
+			rv = m.find();
+			if (_logger.isDebugEnabled())
+			{
+				_logger.debug("{} matches {}:{}", _fileName, fname_, rv);
+			}
+
+			//rv = FileUtils.
+		}
+		catch (final Exception ex_)
+		{
+			_logger.error(ex_.toString());
+		}
+		return rv;
+	}
 
 
 

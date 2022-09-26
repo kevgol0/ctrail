@@ -215,7 +215,8 @@ public class CtrailEntryPoint implements IShutdownManager
         options.addOption(Option.builder("m").longOpt("match").hasArg().argName("STR")
                 .desc("only show lines that match STR")
                 .build());
-        options.addOption(Option.builder("f").longOpt("filters").hasArg().desc("overrides config for file-filtering; <arg=true|false>").build());
+        options.addOption(Option.builder("f").longOpt("filters").hasArg().desc("set include filters, not case sensitive; overrides config for file-filtering; <arg=true|false>").build());
+        options.addOption(Option.builder("v").longOpt("exclude-filters").hasArg().desc("set exculide filter, not-case sensitive; overrides config for file-filtering; <arg=true|false>").build());
         options.addOption(Option.builder("h").longOpt("help").desc("print command line directives").build());
 
 
@@ -234,6 +235,11 @@ public class CtrailEntryPoint implements IShutdownManager
             if (line.hasOption("f"))
             {
                 CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("f")));
+            }
+            if (line.hasOption("v"))
+            {
+                CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("f")));
+                CtrailProps.getInstance().getFileSearchFilters();
             }
 
             if (line.hasOption("h"))
