@@ -73,46 +73,15 @@ public class StdinReaderThread implements Runnable
 	@Override
 	public void run()
 	{
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
+		if (_searchFilter != null)
 		{
-			String line;
-			if (_match == null)
-			{
-				while ((line = reader.readLine()) != null)
-				{
-					_output.add(new LogLine("stdin", line, null));
-				}
-			}
-			else
-			{
-				while ((line = reader.readLine()) != null)
-				{
-					//
-					// should I show this line - based off of config
-					//
-					if (_searchFilter.shouldExcludeLineDueToSeachTerms(line))
-					{
-						_output.add(new LogLine("stdin", line, null));
-						continue;
-					}
-
-
-
-					//
-					// command line dynamic match?
-					//
-					if (line.contains(_match))
-					{
-						_output.add(new LogLine("stdin", line, null));
-						continue;
-					}
-				}
-			}
+			runWithSearchFiler();
 		}
-		catch (final Exception ex_)
+		else if (_match != null)
 		{
-			_logger.error(ex_.toString());
+			runWithMatch();
 		}
+
 
 		if (_logger.isTraceEnabled())
 		{
@@ -125,6 +94,69 @@ public class StdinReaderThread implements Runnable
 		// soon as they finish processing
 		//
 		_ender.initiateShutdown();
+	}
+
+
+
+
+
+	private void runWithSearchFiler()
+	{
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				//
+				// should I show this line - based off of config
+				//
+				if (_searchFilter.shouldExcludeLineDueToSeachTerms(line))
+				{
+					continue;
+				}
+
+
+				//
+				// the "default-should-include" is taken care of in the include check
+				//
+				else if (_searchFilter.shouldIncludeLineDueToSeachTerms(line))
+				{
+					_output.add(new LogLine("stdin", line, null));
+				}
+			}
+		}
+		catch (final Exception ex_)
+		{
+			_logger.error(ex_.toString());
+		}
+
+	}
+
+
+
+
+
+	private void runWithMatch()
+	{
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				//
+				// command line dynamic match?
+				//
+				if (line.contains(_match))
+				{
+					_output.add(new LogLine("stdin", line, null));
+					continue;
+				}
+			}
+		}
+		catch (final Exception ex_)
+		{
+			_logger.error(ex_.toString());
+		}
 	}
 
 }

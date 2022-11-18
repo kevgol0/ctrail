@@ -43,7 +43,7 @@ public class FileSearchFilter
 
 	@Getter private List<String> _excldueTerms = new LinkedList<String>();
 
-	@Getter private boolean _defLineExclude;
+	@Getter private boolean _defLineInclude;
 
 
 
@@ -53,7 +53,7 @@ public class FileSearchFilter
 	{
 		_fileName = toRegEx(fileName_);
 		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
-		_defLineExclude = isDefaultExclude_;
+		_defLineInclude = isDefaultExclude_;
 	}
 
 
@@ -114,9 +114,8 @@ public class FileSearchFilter
 
 
 
-	public final boolean shouldExcludeLineDueToSeachTerms(final String line_)
+	public boolean shouldIncludeLineDueToSeachTerms(String line_)
 	{
-
 		//
 		// includes trump excludes... this MUST happen first
 		//
@@ -129,11 +128,20 @@ public class FileSearchFilter
 				// found a search term specified in the include
 				// filter... I want to INCLUDE this line
 				//
-				return false;
+				return true;
 			}
 		}
 
 
+		return _defLineInclude;
+	}
+
+
+
+
+
+	public final boolean shouldExcludeLineDueToSeachTerms(final String line_)
+	{
 		for (int i = 0; i < getExcldueTerms().size(); i++)
 		{
 			if (line_.contains(getExcldueTerms().get(i)))
@@ -154,7 +162,7 @@ public class FileSearchFilter
 		// did not find any of the terms specified
 		// in either the include or the exclude list
 		//
-		return _defLineExclude;
+		return false;
 	}
 
 
@@ -173,6 +181,8 @@ public class FileSearchFilter
 		buff.append(_excldueTerms.toString());
 		return buff.toString();
 	}
+
+
 
 
 
