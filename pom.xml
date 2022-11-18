@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kagr.tools</groupId>
   <artifactId>ctrail</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 
 
   <properties>

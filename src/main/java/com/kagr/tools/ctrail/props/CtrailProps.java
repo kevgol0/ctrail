@@ -124,6 +124,8 @@ public class CtrailProps
 		_keysToColorCount = new Hashtable<>();
 		_keys = new LinkedList<>();
 		final String propsFileName = getConfigFile();
+		_logger.debug("filename:{}", propsFileName);
+		
 		final Parameters params = new Parameters();
 		_logger.debug("config file: {}", propsFileName);
 		final FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<XMLConfiguration>(XMLConfiguration.class).configure(params.xml()
@@ -333,7 +335,7 @@ public class CtrailProps
 					continue;
 				}
 
-				fst = new FileSearchFilter(fname);
+				fst = new FileSearchFilter(fname, !_fileFilterDefaultsToInclude);
 				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).includes.keyword", i));
 				final List<String> includes = fst.getIncludeTerms();
 				String key;

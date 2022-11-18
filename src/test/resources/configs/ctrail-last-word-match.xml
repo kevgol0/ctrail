@@ -86,7 +86,7 @@
       <colorpair>
         <keyword>(SEV)</keyword>
         <fgcolor>red</fgcolor>
-        <fgcolor>blue</fgcolor>
+        <flcolor>blue</flcolor>
       </colorpair>
 
       <colorpair>

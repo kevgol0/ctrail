@@ -17,9 +17,8 @@ import static org.junit.Assert.assertEquals;
 
 
 
+import java.nio.file.Paths;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 
@@ -34,9 +33,9 @@ public class ColorUnitTestCase
 
 
 	@Test
-	public void testSinglePairNoColor()
+	public void testCorrectNumberOfColorings()
 	{
-		System.setProperty(CtrailProps.CTRAIL_CFG_KEY, "./src/test/resources/configs/ctrail-case-ignore.xml");
+		System.setProperty(CtrailProps.CTRAIL_CFG_KEY, Paths.get(".", "src", "test", "resources", "configs", "ctrail-case-ignore.xml").toString());
 		CtrailProps.getInstance();
 		final CtrailProps props = CtrailProps.getInstance();
 		Hashtable<String, Integer> k2c = props.getKeysToColorCount();
