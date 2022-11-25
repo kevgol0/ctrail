@@ -17,6 +17,7 @@ import static java.text.MessageFormat.format;
 
 
 
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,10 +28,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 
 
-import org.apache.commons.collections.MultiMap;
 import org.apache.commons.configuration2.XMLConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
@@ -84,6 +86,8 @@ public class CtrailProps
 
 	@Getter @Setter private String _defaultFlColor = "";
 
+	@Getter private String _version;
+
 	@Getter private final Hashtable<String, String> _keysToColors;
 
 	@Getter private final Hashtable<String, String> _keysToFileColors;
@@ -125,7 +129,7 @@ public class CtrailProps
 		_keys = new LinkedList<>();
 		final String propsFileName = getConfigFile();
 		_logger.debug("filename:{}", propsFileName);
-		
+
 		final Parameters params = new Parameters();
 		_logger.debug("config file: {}", propsFileName);
 		final FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<XMLConfiguration>(XMLConfiguration.class).configure(params.xml()
@@ -476,5 +480,56 @@ public class CtrailProps
 
 		// KAGR: bug - should read config from jar
 		return "";
+	}
+
+
+
+
+
+	public String getVersion()
+	{
+		if (!StringUtils.isEmpty(_version))
+		{
+			return _version;
+		}
+
+		_version = calcVersion();
+		return _version;
+	}
+
+
+
+
+
+	protected String calcVersion()
+	{
+		if (_version != null)
+		{
+			return _version;
+		}
+
+		try
+		{
+			Class clazz = CtrailProps.class;
+			String className = clazz.getSimpleName() + ".class";
+			String classPath = clazz.getResource(className).toString();
+			if (!classPath.startsWith("jar"))
+			{
+				// Class not from JAR
+				return "UNK";
+			}
+			String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
+					+ "/META-INF/MANIFEST.MF";
+			Manifest manifest = new Manifest(new URL(manifestPath).openStream());
+			Attributes attr = manifest.getMainAttributes();
+			_version = new String(attr.getValue("Implementation-Version"));
+			return _version;
+		}
+		catch (Exception ex_)
+		{
+			_logger.error(ex_.toString(), ex_);
+		}
+
+		return getClass().getPackage().getImplementationVersion();
 	}
 }

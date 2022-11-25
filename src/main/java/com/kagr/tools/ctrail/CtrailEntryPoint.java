@@ -252,6 +252,11 @@ public class CtrailEntryPoint implements IShutdownManager
 				.longOpt("help")
 				.desc("print command line directives")
 				.build());
+		
+		options.addOption(Option.builder()
+				.longOpt("version")
+				.desc("show version")
+				.build());
 
 
 		try
@@ -274,12 +279,17 @@ public class CtrailEntryPoint implements IShutdownManager
 			{
 				CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("v")));
 			}
+			if (line.hasOption("version"))
+			{
+				System.out.println("ctrail, version:" + CtrailProps.getInstance().getVersion());
+				System.exit(0);
+			}
 
 			if (line.hasOption("h"))
 			{
 				final HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp("ctr", options);
-				System.exit(1);
+				System.exit(0);
 			}
 
 
