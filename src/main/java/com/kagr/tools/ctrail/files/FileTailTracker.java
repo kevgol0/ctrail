@@ -146,6 +146,33 @@ public class FileTailTracker
 
 
 
+	/**
+	 * Applies the filter's include list. With no filter attached to this file
+	 * every line is shown, which is what an unfiltered tail should do.
+	 */
+	public final boolean shouldIncludeLineDueToSeachTerms(final String line_)
+	{
+		if (line_ == null)
+		{
+			return false;
+		}
+
+		if (_fileSearchFilter != null)
+		{
+			return _fileSearchFilter.shouldIncludeLineDueToSeachTerms(line_);
+		}
+
+
+		//
+		// default
+		//
+		return true;
+	}
+
+
+
+
+
 	@Override
 	public String toString()
 	{

@@ -240,12 +240,14 @@ public class CtrailEntryPoint implements IShutdownManager
 
 		options.addOption(Option.builder("f")
 				.longOpt("filters").hasArg()
-				.desc("set include filters, not case sensitive; overrides config for file-filtering; <arg=true|false>")
+				.argName("true|false")
+				.desc("enable/disable per-file filtering entirely; overrides <filtering><enabled> in the config")
 				.build());
 
 		options.addOption(Option.builder("v")
 				.longOpt("exclude-filters").hasArg()
-				.desc("set exculide filter, not-case sensitive; overrides config for file-filtering; <arg=true|false>")
+				.argName("true|false")
+				.desc("enable/disable only the <excludes> terms; overrides <filtering><excludesEnabled> in the config")
 				.build());
 
 		options.addOption(Option.builder("h")
@@ -277,7 +279,11 @@ public class CtrailEntryPoint implements IShutdownManager
 			}
 			if (line.hasOption("v"))
 			{
-				CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("v")));
+				//
+				// -v toggles the exclude half of filtering; it used to set the
+				// same flag as -f, so the two options were indistinguishable
+				//
+				CtrailProps.getInstance().setEnabledExcludeFiltering(Boolean.parseBoolean(line.getOptionValue("v")));
 			}
 			if (line.hasOption("version"))
 			{

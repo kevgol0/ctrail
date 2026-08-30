@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.kagr.tools</groupId>
 	<artifactId>ctrail</artifactId>
-	<version>1.1.0</version>
+	<version>1.1.1</version>
 
 
 	<properties>
@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.8</version>
+			<version>1.18.30</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -58,6 +58,13 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.7</version>
+		</dependency>
+		<!-- used directly by CtrailProps/LineFormatter/FileTailTracker; was only
+		     reaching the classpath transitively via commons-configuration2 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.12.0</version>
 		</dependency>
 	</dependencies>
 

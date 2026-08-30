@@ -1,5 +1,5 @@
 #!/bin/bash
-FILE=ctrail-0.0.8.jar
+FILE=ctrail-1.1.1.jar
 aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE
 sudo mv /tmp/$FILE /usr/local/lib
 
@@ -10,17 +10,19 @@ sudo ln -s /usr/local/lib/$FILE /usr/local/lib/ctrail.jar
 
 FILE=ctrail.xml
 aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE
-if [ ! -e /ec/$FILE ] ; then 
+# /ec/ was a typo for /etc/ -- the test never matched, so every install
+# silently clobbered the user's existing config
+if [ ! -e /etc/$FILE ] ; then
     sudo mv /tmp/$FILE /etc/$FILE
 else
-    echo "NOT replacing pre-exisitng file: /etc/$FILE"
+    echo "NOT replacing pre-existing file: /etc/$FILE"
 fi
 
 
 FILE=ctr
 aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE
 sudo mv /tmp/$FILE /usr/local/bin
-chmod +x /usr/local/bin/ctr
+sudo chmod +x /usr/local/bin/ctr
 
 
 

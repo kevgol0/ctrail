@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.jar.Attributes;
@@ -80,6 +81,12 @@ public class CtrailProps
 
 	@Getter @Setter private boolean _enabledFileFiltering = true;
 
+	//
+	// controls the exclude-term half of file filtering; -v on the
+	// command line toggles this independently of -f (include side)
+	//
+	@Getter @Setter private boolean _enabledExcludeFiltering = true;
+
 	@Getter @Setter private boolean _fileFilterDefaultsToInclude = true;
 
 	@Getter @Setter private String _defaultFgColor = "white";
@@ -102,32 +109,44 @@ public class CtrailProps
 
 
 
-	public static class CtrailPropsHelper
+	private static volatile CtrailProps _instance;
+
+	//
+	// the raw -DCTRAIL_CFG value the cached instance was built from. resolving
+	// the config file costs up to three Files.exists() calls, and getInstance()
+	// is on the per-line hot path, so only re-resolve when the override changes.
+	//
+	private static String _instanceCfgOverride;
+
+	private String _configFile;
+
+	public static synchronized CtrailProps getInstance()
 	{
-		public static final CtrailProps _instance = new CtrailProps();
+		final String cfgOverride = System.getProperty(CTRAIL_CFG_KEY);
+		if (_instance != null && StringUtils.equals(cfgOverride, _instanceCfgOverride))
+		{
+			return _instance;
+		}
+
+		_instance = new CtrailProps(getConfigFile());
+		_instanceCfgOverride = cfgOverride;
+		return _instance;
 	}
-
-
-
-
-
-	public static CtrailProps getInstance()
-	{
-		return CtrailPropsHelper._instance;
-	}
-
-
-
-
 
 	public CtrailProps()
 	{
+		this(getConfigFile());
+	}
+
+	private CtrailProps(final String propsFileName_)
+	{
+		_configFile = propsFileName_;
 		_keysToColors = new Hashtable<>();
 		_keysToFileColors = new Hashtable<>();
 		_fileSearchFilters = new Hashtable<>();
 		_keysToColorCount = new Hashtable<>();
 		_keys = new LinkedList<>();
-		final String propsFileName = getConfigFile();
+		final String propsFileName = _configFile;
 		_logger.debug("filename:{}", propsFileName);
 
 		final Parameters params = new Parameters();
@@ -151,9 +170,15 @@ public class CtrailProps
 			setNoChangeSleepTimeMillis(config.getInt("execution.noChangeSleepTimeMillis", _noChangeSleepTimeMillis));
 			setLineSearchCaseSensitiveMatching(config.getBoolean("execution.useCaseSensitiveSarch", _lineSearchCaseSensitiveMatching));
 			setBlankLineOnFileChange(config.getBoolean("coloring.filename.blankLineOnFileChange", _blankLineOnFileChange));
-			setDefaultFgColor(getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white")));
+			//
+			// an unrecognized color name yields null, which would otherwise be
+			// concatenated into every output line as the literal text "null"
+			//
+			final String defFgColor = getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white"));
+			setDefaultFgColor(defFgColor == null ? ConsoleColors.WHITE : defFgColor);
 			setMatchFirstWord(config.getBoolean("execution.matchFirstWord", _matchFirstWord));
 			setEnabledFileFiltering(config.getBoolean("filtering.enabled", _enabledFileFiltering));
+			setEnabledExcludeFiltering(config.getBoolean("filtering.excludesEnabled", _enabledExcludeFiltering));
 			setFileFilterDefaultsToInclude(config.getBoolean("filtering.fileFilterDefaultsToInclude", _fileFilterDefaultsToInclude));
 
 			initColoring(config);
@@ -215,10 +240,15 @@ public class CtrailProps
 
 	private void initColoring(final XMLConfiguration config_)
 	{
+		//
+		// commons-config hands back a bare String (not a Collection) when the
+		// config holds exactly one colorpair; extractCount handles both shapes,
+		// a raw cast used to throw and leave the count at 0 -- no colors at all
+		//
 		int lineColorCfgSz = 0;
 		try
 		{
-			lineColorCfgSz = ((Collection<?>) config_.getProperty("coloring.linecolors.colorpair.fgcolor")).size();
+			lineColorCfgSz = extractCount(config_, "coloring.linecolors.colorpair.fgcolor");
 			_logger.trace("total number of line colors found:{}", lineColorCfgSz);
 		}
 		catch (final Exception ex_)
@@ -264,20 +294,19 @@ public class CtrailProps
 							_keysToFileColors.put(key, flcolor);
 							dbg.append(";").append(origflcolor);
 						}
-						dbg.append("]");
 					}
 					else
 					{
-						_keys.add(key.toLowerCase());
+						_keys.add(key.toLowerCase(Locale.ROOT));
 						if (!StringUtils.isEmpty(fgcolor))
 						{
-							_keysToColors.put(key.toLowerCase(), fgcolor);
+							_keysToColors.put(key.toLowerCase(Locale.ROOT), fgcolor);
 							_keysToColorCount.put(origfgcolor, _keysToColorCount.getOrDefault(origfgcolor, 0) + 1);
 							dbg.append(origfgcolor);
 						}
 						if (!StringUtils.isEmpty(flcolor))
 						{
-							_keysToFileColors.put(key.toLowerCase(), flcolor);
+							_keysToFileColors.put(key.toLowerCase(Locale.ROOT), flcolor);
 							dbg.append(";").append(origflcolor);
 						}
 					}
@@ -333,13 +362,19 @@ public class CtrailProps
 			try
 			{
 				fname = config_.getString("filtering.filefilter(" + i + ").filename");
-				if (_fileSearchFilters.contains(fname))
+				fst = new FileSearchFilter(fname, _fileFilterDefaultsToInclude);
+
+				//
+				// Hashtable.contains() tests VALUES; the map is keyed by the
+				// regex form of the name, so build the filter first and then
+				// check the key we would actually store under
+				//
+				if (_fileSearchFilters.containsKey(fst.getFileName()))
 				{
 					_logger.debug("already contains file filter:{}", fname);
 					continue;
 				}
 
-				fst = new FileSearchFilter(fname, _fileFilterDefaultsToInclude);
 				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).includes.keyword", i));
 				final List<String> includes = fst.getIncludeTerms();
 				String key;
@@ -377,7 +412,7 @@ public class CtrailProps
 			}
 			catch (final IllegalArgumentException ex_)
 			{
-				_logger.error("error for key:{}, bad value:{}", fname);
+				_logger.error("error loading file filter:{}, cause:{}", fname, ex_.toString());
 			}
 			catch (final NoSuchElementException ex_)
 			{
@@ -437,7 +472,7 @@ public class CtrailProps
 		case "WHITE_UNDERLINED":
 			return ConsoleColors.WHITE_UNDERLINED;
 		default:
-			_logger.warn("color:{} not regognized, returning null");
+			_logger.warn("color:{} not recognized, returning null", color_);
 		}
 
 
@@ -522,7 +557,13 @@ public class CtrailProps
 					+ "/META-INF/MANIFEST.MF";
 			Manifest manifest = new Manifest(new URL(manifestPath).openStream());
 			Attributes attr = manifest.getMainAttributes();
-			_version = new String(attr.getValue("Implementation-Version"));
+			final String implVersion = attr.getValue("Implementation-Version");
+			if (StringUtils.isEmpty(implVersion))
+			{
+				return "UNK";
+			}
+
+			_version = implVersion;
 			return _version;
 		}
 		catch (Exception ex_)

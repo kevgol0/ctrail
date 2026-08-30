@@ -15,6 +15,7 @@ package com.kagr.tools.ctrail.props;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +38,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileSearchFilter
 {
+	//
+	// '*' and '.' get their own cases in toRegEx; these are the rest
+	//
+	private static final String REGEX_METACHARS = "\\+?^$[]{}()|";
+
 	@NonNull @Getter @Setter private String _fileName;
 
 	@Getter private List<String> _includeTerms = new LinkedList<String>();
@@ -49,11 +55,11 @@ public class FileSearchFilter
 
 
 
-	public FileSearchFilter(final String fileName_, boolean isDefaultExclude_)
+	public FileSearchFilter(final String fileName_, boolean isDefaultInclude_)
 	{
 		_fileName = toRegEx(fileName_);
 		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
-		_defLineInclude = isDefaultExclude_;
+		_defLineInclude = isDefaultInclude_;
 	}
 
 
@@ -76,6 +82,15 @@ public class FileSearchFilter
 				buff.append("\\.");
 				break;
 			default:
+				//
+				// '*' is our only wildcard; every other regex metacharacter in a
+				// filename is a literal and must be escaped, or a name such as
+				// "app(1).log" compiles into a completely different pattern
+				//
+				if (REGEX_METACHARS.indexOf(val) >= 0)
+				{
+					buff.append('\\');
+				}
 				buff.append(val);
 				break;
 			}
@@ -116,12 +131,20 @@ public class FileSearchFilter
 
 	public boolean shouldIncludeLineDueToSeachTerms(String line_)
 	{
+		if (line_ == null)
+		{
+			return false;
+		}
+		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
+		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
 		//
 		// includes trump excludes... this MUST happen first
 		//
 		for (int i = 0; i < getIncludeTerms().size(); i++)
 		{
-			if (line_.contains(getIncludeTerms().get(i)))
+			final String includeTerm = getIncludeTerms().get(i);
+			final String normalizedTerm = caseSensitive ? includeTerm : includeTerm.toLowerCase(Locale.ROOT);
+			if (normalizedLine.contains(normalizedTerm))
 			{
 				//
 				// this file has a filter set, and i 
@@ -142,9 +165,26 @@ public class FileSearchFilter
 
 	public final boolean shouldExcludeLineDueToSeachTerms(final String line_)
 	{
+		if (line_ == null)
+		{
+			return false;
+		}
+
+		//
+		// -v / filtering.excludesEnabled turns the exclude list off wholesale
+		//
+		if (!CtrailProps.getInstance().isEnabledExcludeFiltering())
+		{
+			return false;
+		}
+
+		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
+		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
 		for (int i = 0; i < getExcldueTerms().size(); i++)
 		{
-			if (line_.contains(getExcldueTerms().get(i)))
+			final String excludeTerm = getExcldueTerms().get(i);
+			final String normalizedTerm = caseSensitive ? excludeTerm : excludeTerm.toLowerCase(Locale.ROOT);
+			if (normalizedLine.contains(normalizedTerm))
 			{
 				//
 				// this file has a filter set, and i 

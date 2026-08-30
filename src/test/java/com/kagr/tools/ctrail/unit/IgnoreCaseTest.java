@@ -68,8 +68,8 @@ public class IgnoreCaseTest extends StdCtrTest
         LogLine line = new LogLine(filename, str, null);
 
         String resultStr = formatter.format(line);
-        String expected = ConsoleColors.BLUE_UNDERLINED + filename + ":" +
-                ConsoleColors.YELLOW + str + ConsoleColors.RESET;
+        String expected = props.getDefaultFgColor() + filename + ":" +
+                ConsoleColors.WHITE + str + ConsoleColors.RESET;
         assertEquals(expected, resultStr);
     }
 
