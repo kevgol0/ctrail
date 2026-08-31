@@ -1,5 +1,5 @@
 #!/bin/bash
-FILE=ctrail-0.0.8.jar
+FILE=ctrail-1.1.0.jar
 aws s3 cp s3://alertnest-releases/color-trail/$FILE /tmp/$FILE
 sudo mv /tmp/$FILE /usr/local/lib
 

@@ -102,32 +102,33 @@ public class CtrailProps
 
 
 
-	public static class CtrailPropsHelper
+	private static volatile CtrailProps _instance;
+	private String _configFile;
+
+	public static synchronized CtrailProps getInstance()
 	{
-		public static final CtrailProps _instance = new CtrailProps();
+		final String configFile = getConfigFile();
+		if (_instance == null || !StringUtils.equals(configFile, _instance._configFile))
+		{
+			_instance = new CtrailProps(configFile);
+		}
+		return _instance;
 	}
-
-
-
-
-
-	public static CtrailProps getInstance()
-	{
-		return CtrailPropsHelper._instance;
-	}
-
-
-
-
 
 	public CtrailProps()
 	{
+		this(getConfigFile());
+	}
+
+	private CtrailProps(final String propsFileName_)
+	{
+		_configFile = propsFileName_;
 		_keysToColors = new Hashtable<>();
 		_keysToFileColors = new Hashtable<>();
 		_fileSearchFilters = new Hashtable<>();
 		_keysToColorCount = new Hashtable<>();
 		_keys = new LinkedList<>();
-		final String propsFileName = getConfigFile();
+		final String propsFileName = _configFile;
 		_logger.debug("filename:{}", propsFileName);
 
 		final Parameters params = new Parameters();

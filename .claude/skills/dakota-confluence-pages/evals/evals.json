@@ -1,0 +1,60 @@
+{
+  "skill_name": "dakota-confluence-pages",
+  "evals": [
+    {
+      "id": 0,
+      "name": "scoring-identity-alignment-design-doc",
+      "prompt": "Draft a Confluence page for our Nebraska space documenting the design of the new resume identity-alignment scoring feature. It runs in the resume-scoring service (port 8084) and calls OpenAI's Responses API with the gpt-5.5 search model (OPENAI_SEARCH_MODEL) plus web_search to align a candidate's claimed identity against public signals, and folds in a HIBP email-reputation signal (HIBP_API_KEY). It relates to DAK-42. Don't publish anything to Confluence \u2014 just produce the page body as an HTML file so I can review it first.",
+      "expected_output": "A well-structured design/architecture doc body in Confluence HTML: specific title, a summary paragraph, a status panel and a links line (DAK-42), context/problem, goals/non-goals, proposed design referencing the scoring service and the OpenAI/HIBP integrations, alternatives considered, risks/open questions, rollout/testing. Uses real headings, at least one panel, code block(s) for payloads/config, and ideally a ToC. Saved as an HTML file; nothing published to Confluence.",
+      "files": [],
+      "assertions": [
+        "An HTML page body file was produced and is non-empty",
+        "Uses real Confluence headings (<h1>-<h3>) rather than a wall of prose",
+        "Has a summary paragraph near the top",
+        "Includes a status panel or callout (data-type=\"panel-...\")",
+        "References the DAK-42 ticket",
+        "Mentions the resume-scoring service and port 8084",
+        "Mentions the gpt-5.5 search model (OPENAI_SEARCH_MODEL) and the HIBP signal",
+        "Includes an 'Alternatives considered' (or equivalent decision) section",
+        "Contains at least one code block (<pre><code) for a payload/config",
+        "Body is a fragment, NOT wrapped in <html>/<head>/<body> tags",
+        "Nothing was actually published to Confluence (no MCP create/update call)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "candidate-bulk-upload-architecture-from-plan",
+      "prompt": "Turn our candidate bulk-upload design into a Confluence page for the Nebraska space. The flow: resume-ingestion (8081) accepts a zip of PDFs, streams each to S3 via multipart upload, and fans out one SQS message per file to resume-orchestrator (8082), which runs anonymization and hands candidates to candidate-catalog (8083). It's the DAK-100 epic. Include an architecture/flow section with a diagram and cover failure handling (partial-batch failures, duplicate re-uploads). Save it as an HTML file for review \u2014 do not create the page in Confluence yet.",
+      "expected_output": "A Confluence HTML design doc covering the multi-service flow (ingestion 8081 -> S3/SQS -> orchestrator 8082 -> catalog 8083), an architecture/flow section with a diagram (Mermaid or described), a failure-handling section addressing partial-batch and duplicate re-uploads, links to DAK-100, status panel, and testing notes. Saved as a file; nothing published.",
+      "files": [],
+      "assertions": [
+        "An HTML page body file was produced and is non-empty",
+        "Uses real Confluence headings rather than a wall of prose",
+        "Mentions all three services/ports: ingestion 8081, orchestrator 8082, catalog 8083",
+        "Has an architecture/flow section with a diagram (Mermaid, image, or clearly-described flow)",
+        "Has a failure-handling section covering partial-batch failures and duplicate re-uploads",
+        "References the DAK-100 epic",
+        "Includes a status panel or callout and/or a code block",
+        "Body is a fragment, NOT wrapped in <html>/<head>/<body> tags",
+        "Nothing was actually published to Confluence (no MCP create/update call)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "local-stack-runbook-kb-page",
+      "prompt": "Write a Confluence knowledge-base page for the Nebraska space that explains how to run the full Dakota stack locally with Docker Compose and LocalStack, including how to troubleshoot the common case where the infrastructure-builder doesn't provision the DynamoDB tables. Save the page body as an HTML file \u2014 don't publish it.",
+      "expected_output": "A runbook/how-to page in Confluence HTML with a summary, prerequisites, ordered setup steps (docker compose up in dakota-infrastructure-builder), code blocks for the commands, and a troubleshooting section for the missing-tables case (info/warning panels, task list or steps). Scannable headings and ideally a ToC. Saved as a file; nothing published.",
+      "files": [],
+      "assertions": [
+        "An HTML page body file was produced and is non-empty",
+        "Uses real Confluence headings and a scannable structure",
+        "Has ordered setup steps including 'docker compose up' in dakota-infrastructure-builder",
+        "Commands are in code blocks (<pre><code)",
+        "Has a troubleshooting section addressing the missing DynamoDB tables case",
+        "Uses at least one info/warning panel (data-type=\"panel-...\") for a callout",
+        "Body is a fragment, NOT wrapped in <html>/<head>/<body> tags",
+        "Nothing was actually published to Confluence (no MCP create/update call)"
+      ]
+    }
+  ]
+}

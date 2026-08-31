@@ -15,6 +15,7 @@ package com.kagr.tools.ctrail.props;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -116,12 +117,20 @@ public class FileSearchFilter
 
 	public boolean shouldIncludeLineDueToSeachTerms(String line_)
 	{
+		if (line_ == null)
+		{
+			return false;
+		}
+		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
+		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
 		//
 		// includes trump excludes... this MUST happen first
 		//
 		for (int i = 0; i < getIncludeTerms().size(); i++)
 		{
-			if (line_.contains(getIncludeTerms().get(i)))
+			final String includeTerm = getIncludeTerms().get(i);
+			final String normalizedTerm = caseSensitive ? includeTerm : includeTerm.toLowerCase(Locale.ROOT);
+			if (normalizedLine.contains(normalizedTerm))
 			{
 				//
 				// this file has a filter set, and i 
@@ -142,9 +151,17 @@ public class FileSearchFilter
 
 	public final boolean shouldExcludeLineDueToSeachTerms(final String line_)
 	{
+		if (line_ == null)
+		{
+			return false;
+		}
+		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
+		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
 		for (int i = 0; i < getExcldueTerms().size(); i++)
 		{
-			if (line_.contains(getExcldueTerms().get(i)))
+			final String excludeTerm = getExcldueTerms().get(i);
+			final String normalizedTerm = caseSensitive ? excludeTerm : excludeTerm.toLowerCase(Locale.ROOT);
+			if (normalizedLine.contains(normalizedTerm))
 			{
 				//
 				// this file has a filter set, and i 

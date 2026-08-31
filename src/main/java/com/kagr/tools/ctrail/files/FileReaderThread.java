@@ -15,6 +15,7 @@ package com.kagr.tools.ctrail.files;
 
 import java.io.IOException;
 import java.util.Deque;
+import java.util.Locale;
 import java.util.concurrent.BlockingDeque;
 
 
@@ -185,9 +186,14 @@ public class FileReaderThread implements Runnable
 				break;
 			}
 
-			if (_match != null && !line.contains(_match))
+			if (_match != null)
 			{
-				continue;
+				final String needle = _props.isLineSearchCaseSensitiveMatching() ? _match : _match.toLowerCase(Locale.ROOT);
+				final String haystack = _props.isLineSearchCaseSensitiveMatching() ? line : line.toLowerCase(Locale.ROOT);
+				if (!haystack.contains(needle))
+				{
+					continue;
+				}
 			}
 
 			if (tracker_.shouldExcludeLineDueToSeachTerms(line))
