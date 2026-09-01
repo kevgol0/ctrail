@@ -33,26 +33,16 @@ public class LineFormatter
 {
     private static final String _reset = ConsoleColors.RESET;
 
-    private transient CtrailProps _props;
-    private transient Hashtable<String, String> _keysToColors;
-    private transient Hashtable<String, String> _keysToFileColors;
-    private transient List<String> _keys;
-    private transient int _keysSz;
-    private transient String _defFgColor;
-    private transient boolean _firstWordMatch;
-
-    private transient String _tmpKey;
-    private transient String _tmpRslt;
-    private transient String _tmpStr;
-    private transient String _tmpLogClr;
-    private transient String _tmpFileClr;
+    private final CtrailProps _props;
+    private final Hashtable<String, String> _keysToColors;
+    private final Hashtable<String, String> _keysToFileColors;
+    private final List<String> _keys;
+    private final int _keysSz;
+    private final String _defFgColor;
+    private final boolean _firstWordMatch;
+    private final boolean _caseSensitive;
 
     public LineFormatter()
-    {
-        refreshProps();
-    }
-
-    private void refreshProps()
     {
         _props = CtrailProps.getInstance();
         _keysToColors = _props.getKeysToColors();
@@ -61,6 +51,7 @@ public class LineFormatter
         _keysSz = _keys.size();
         _defFgColor = _props.getDefaultFgColor();
         _firstWordMatch = _props.isMatchFirstWord();
+        _caseSensitive = _props.isLineSearchCaseSensitiveMatching();
     }
 
     public String format(final LogLine line_)
@@ -74,29 +65,21 @@ public class LineFormatter
             return "";
         }
 
-        refreshProps();
+        // local variables for thread safety
+        String logClr = null;
+        String fileClr = null;
 
-        _tmpRslt = null;
-        _tmpKey = null;
-        _tmpLogClr = null;
-        _tmpFileClr = null;
+        // normalize line for keyword matching
+        final String searchLine = _caseSensitive ? line_.getLine() : line_.getLine().toLowerCase();
 
-        if (_props.isLineSearchCaseSensitiveMatching())
-        {
-            _tmpStr = line_.getLine();
-        }
-        else
-        {
-            _tmpStr = line_.getLine().toLowerCase();
-        }
-
+        // find matching color keyword
         for (int i = 0; i < _keysSz; i++)
         {
-            _tmpKey = _keys.get(i);
-            if (_tmpStr.contains(_tmpKey))
+            final String key = _keys.get(i);
+            if (searchLine.contains(key))
             {
-                _tmpLogClr = _keysToColors.get(_tmpKey);
-                _tmpFileClr = _keysToFileColors.get(_tmpKey);
+                logClr = _keysToColors.get(key);
+                fileClr = _keysToFileColors.get(key);
 
                 if (_firstWordMatch)
                 {
@@ -105,36 +88,39 @@ public class LineFormatter
             }
         }
 
+        // build the filename prefix
+        String result;
         if (line_.getOrigFilename() != null)
         {
-            if (_tmpFileClr != null)
+            if (fileClr != null)
             {
-                _tmpRslt = _tmpFileClr + line_.getOrigFilename() + ":";
+                result = fileClr + line_.getOrigFilename() + ":";
             }
-            else if (_tmpLogClr != null)
+            else if (logClr != null)
             {
-                _tmpRslt = _tmpLogClr + line_.getOrigFilename() + ":";
+                result = logClr + line_.getOrigFilename() + ":";
             }
             else
             {
-                _tmpRslt = _defFgColor + line_.getOrigFilename() + ":";
+                result = _defFgColor + line_.getOrigFilename() + ":";
             }
         }
         else
         {
-            _tmpRslt = "";
+            result = "";
         }
 
-        if (_tmpLogClr != null)
+        // append the colored line content
+        if (logClr != null)
         {
-            _tmpRslt += _tmpLogClr + line_.getLine() + _reset;
+            result += logClr + line_.getLine() + _reset;
         }
         else
         {
-            _tmpRslt += _defFgColor + line_.getLine() + _reset;
+            result += _defFgColor + line_.getLine() + _reset;
         }
 
-        return _tmpRslt;
+        return result;
     }
 
 }

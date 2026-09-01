@@ -17,10 +17,12 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Deque;
+import java.util.Locale;
 
 
 
 import com.kagr.tools.ctrail.IShutdownManager;
+import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
 import com.kagr.tools.ctrail.unit.LogLine;
 
@@ -81,6 +83,10 @@ public class StdinReaderThread implements Runnable
 		{
 			runWithMatch();
 		}
+		else
+		{
+			runPassthrough();
+		}
 
 
 		if (_logger.isTraceEnabled())
@@ -138,19 +144,43 @@ public class StdinReaderThread implements Runnable
 
 	private void runWithMatch()
 	{
+		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
+		final String needle = caseSensitive ? _match : _match.toLowerCase(Locale.ROOT);
+
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
 		{
 			String line;
 			while ((line = reader.readLine()) != null)
 			{
 				//
-				// command line dynamic match?
+				// command line dynamic match, respecting case sensitivity setting
 				//
-				if (line.contains(_match))
+				final String haystack = caseSensitive ? line : line.toLowerCase(Locale.ROOT);
+				if (haystack.contains(needle))
 				{
 					_output.add(new LogLine("stdin", line, null));
-					continue;
 				}
+			}
+		}
+		catch (final Exception ex_)
+		{
+			_logger.error(ex_.toString());
+		}
+	}
+
+
+
+	/**
+	 * reads all lines from stdin without any filtering
+	 */
+	private void runPassthrough()
+	{
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				_output.add(new LogLine("stdin", line, null));
 			}
 		}
 		catch (final Exception ex_)

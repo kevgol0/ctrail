@@ -80,6 +80,8 @@ public class CtrailProps
 
 	@Getter @Setter private boolean _enabledFileFiltering = true;
 
+	@Getter @Setter private boolean _enabledExcludeFiltering = true;
+
 	@Getter @Setter private boolean _fileFilterDefaultsToInclude = true;
 
 	@Getter @Setter private String _defaultFgColor = "white";
@@ -265,7 +267,6 @@ public class CtrailProps
 							_keysToFileColors.put(key, flcolor);
 							dbg.append(";").append(origflcolor);
 						}
-						dbg.append("]");
 					}
 					else
 					{
@@ -334,7 +335,7 @@ public class CtrailProps
 			try
 			{
 				fname = config_.getString("filtering.filefilter(" + i + ").filename");
-				if (_fileSearchFilters.contains(fname))
+				if (_fileSearchFilters.containsKey(fname))
 				{
 					_logger.debug("already contains file filter:{}", fname);
 					continue;
@@ -378,7 +379,7 @@ public class CtrailProps
 			}
 			catch (final IllegalArgumentException ex_)
 			{
-				_logger.error("error for key:{}, bad value:{}", fname);
+				_logger.error("error for key:{}, error:{}", fname, ex_.toString());
 			}
 			catch (final NoSuchElementException ex_)
 			{
@@ -438,7 +439,7 @@ public class CtrailProps
 		case "WHITE_UNDERLINED":
 			return ConsoleColors.WHITE_UNDERLINED;
 		default:
-			_logger.warn("color:{} not regognized, returning null");
+			_logger.warn("color:{} not recognized, returning null", color_);
 		}
 
 
@@ -523,7 +524,7 @@ public class CtrailProps
 					+ "/META-INF/MANIFEST.MF";
 			Manifest manifest = new Manifest(new URL(manifestPath).openStream());
 			Attributes attr = manifest.getMainAttributes();
-			_version = new String(attr.getValue("Implementation-Version"));
+			_version = attr.getValue("Implementation-Version");
 			return _version;
 		}
 		catch (Exception ex_)

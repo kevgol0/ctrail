@@ -137,9 +137,9 @@ public class FileTailTracker
 
 
 		//
-		// default
+		// no filter set — use the configured default
 		//
-		return false;
+		return _defLineExclude;
 	}
 
 

@@ -155,6 +155,13 @@ public class FileSearchFilter
 		{
 			return false;
 		}
+
+		// skip exclude check if exclude filtering is disabled
+		if (!CtrailProps.getInstance().isEnabledExcludeFiltering())
+		{
+			return false;
+		}
+
 		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
 		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
 		for (int i = 0; i < getExcldueTerms().size(); i++)

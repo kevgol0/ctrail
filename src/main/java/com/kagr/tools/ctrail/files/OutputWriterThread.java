@@ -108,7 +108,7 @@ public class OutputWriterThread extends Thread
                 //
                 // latest entry - don't wait forever
                 //
-                line = _output.pollLast(1, TimeUnit.MILLISECONDS);
+                line = _output.pollFirst(1, TimeUnit.MILLISECONDS);
                 if (line == null)
                 {
                     if (_logger.isTraceEnabled())

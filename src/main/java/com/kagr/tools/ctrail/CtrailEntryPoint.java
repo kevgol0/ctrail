@@ -277,7 +277,7 @@ public class CtrailEntryPoint implements IShutdownManager
 			}
 			if (line.hasOption("v"))
 			{
-				CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("v")));
+				CtrailProps.getInstance().setEnabledExcludeFiltering(Boolean.parseBoolean(line.getOptionValue("v")));
 			}
 			if (line.hasOption("version"))
 			{
