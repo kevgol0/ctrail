@@ -106,14 +106,15 @@ public class CtrailEntryPoint implements IShutdownManager
 		_fileTrackers = getFilesFromArgs(args_);
 		if (_fileTrackers.size() <= 0)
 		{
-			FileSearchFilter filter = null;
-			if (CtrailProps.getInstance().getFileSearchFilters() != null)
+			//
+			// resolveStdinFilter() picks <stdinfilter>, falls back to the
+			// legacy <filefilter><filename>stdin</filename>, and honors the
+			// filtering master switch the same way the file path does
+			//
+			final FileSearchFilter filter = CtrailProps.getInstance().resolveStdinFilter();
+			if (filter != null)
 			{
-				filter = CtrailProps.getInstance().getFileSearchFilters().get("stdin$");
-				if (filter != null)
-				{
-					_logger.trace("filter for stdin found:{}", filter.toString());
-				}
+				_logger.trace("filter for stdin found:{}", filter.toString());
 			}
 			_reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern, this, filter));
 			_reader.setName("istream-reader");

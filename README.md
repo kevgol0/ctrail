@@ -95,7 +95,8 @@ warning and falls back to the default foreground color.
 
 ### `<filtering>`
 
-Filters attach to a file by name and decide, per line, whether it is printed.
+Filters decide, per line, whether it is printed. A filter applies either to files (matched by name)
+or to piped input.
 
 ```xml
 <filtering>
@@ -103,6 +104,17 @@ Filters attach to a file by name and decide, per line, whether it is printed.
     <excludesEnabled>true</excludesEnabled>
     <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
 
+    <!-- applies when reading from a pipe: `cat app.log | ctr` -->
+    <stdinfilter>
+        <includes>
+            <keyword>geo-lookup</keyword>
+        </includes>
+        <excludes>
+            <keyword>heartbeat</keyword>
+        </excludes>
+    </stdinfilter>
+
+    <!-- applies to files whose name matches -->
     <filefilter>
         <filename>cityspark*.log.0</filename>
         <includes>
@@ -117,9 +129,11 @@ Filters attach to a file by name and decide, per line, whether it is printed.
 
 | Element | Default | Description |
 | --- | --- | --- |
-| `enabled` | true | Master switch. When false, no filter is attached to any file and every line is shown. |
-| `excludesEnabled` | true | Applies the `<excludes>` lists. Turn off to keep includes while ignoring excludes. |
-| `fileFilterDefaultsToInclude` | true | Verdict for a line that matched neither list, on a file that HAS a filter. Set `false` to make the filter a strict allow-list. |
+| `enabled` | true | Master switch, overridden by `-f`. When false, no filter is attached to any source — files or stdin — and every line is shown. |
+| `excludesEnabled` | true | Applies the `<excludes>` lists, overridden by `-v`. Turn off to keep includes while ignoring excludes. |
+| `fileFilterDefaultsToInclude` | true | Verdict for a line that matched neither list, on a source that HAS a filter. Set `false` to make the filter a strict allow-list. |
+| `stdinfilter` | — | Filter for piped input. Takes no `<filename>`; there is only ever one standard in. |
+| `filefilter` | — | Repeatable. Filter for files matching `<filename>`. |
 
 `<filename>` matching: `*` is a wildcard, every other character is a literal (so `.`, `(`, `+` and
 friends match themselves). The pattern is anchored to the end of the name, and matches the file's
@@ -128,11 +142,16 @@ base name, not the full path.
 Evaluation order for each line:
 
 1. `-m/--match`, if given. A non-matching line is dropped.
-2. The file's `<excludes>`. A match drops the line.
-3. The file's `<includes>`. A match keeps the line.
+2. The source's `<excludes>`. A match drops the line.
+3. The source's `<includes>`. A match keeps the line.
 4. Otherwise `fileFilterDefaultsToInclude` decides.
 
-Files with no matching `<filefilter>` are never filtered — every line is shown.
+A source with no filter of its own is never filtered — every line is shown. That means files with no
+matching `<filefilter>`, and piped input when no `<stdinfilter>` is declared.
+
+> Before `<stdinfilter>` existed, piped input could only be filtered by a `<filefilter>` whose
+> `<filename>` was literally `stdin`. That still works, but is deprecated — prefer `<stdinfilter>`,
+> which wins if both are present.
 
 
 ## Files

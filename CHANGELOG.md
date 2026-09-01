@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+* **`<filtering><stdinfilter>`** — filters piped input, so `cat app.log | ctr` and
+  `kubectl logs -f pod | ctr` honor the same `<includes>`/`<excludes>` machinery files have always
+  had. It takes no `<filename>`; there is only one standard in.
+
+  Previously the only way to filter a pipe was an undocumented special case: a `<filefilter>` whose
+  `<filename>` was literally `stdin`, matched by exact key lookup. So `stdin` worked while `stdin*`
+  and `STDIN` were silently ignored. That form still works for back-compat but is deprecated;
+  `<stdinfilter>` wins when both are present.
+
+### Fixed
+
+* **`-f false` did not disable filtering for piped input.** Files were gated on
+  `isEnabledFileFiltering()`, the stdin path was not, so `-f false` turned filters off for files and
+  left them on for pipes. Both paths now resolve through `CtrailProps.resolveStdinFilter()`.
+* **`prependFilenameToLine` was ignored for piped input.** The source name was hardcoded, so stdin
+  emitted `stdin: some line` even with the setting false, while files correctly emitted bare lines.
+
+
 ## 1.1.1
 
 Bug-fix release. No config file changes are required; `<filtering><excludesEnabled>` is new and

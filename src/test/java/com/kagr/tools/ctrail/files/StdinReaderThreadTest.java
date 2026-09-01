@@ -14,6 +14,7 @@ package com.kagr.tools.ctrail.files;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -196,6 +197,86 @@ public class StdinReaderThreadTest
 		final List<String> lines = drain();
 		assertEquals(1, lines.size());
 		assertEquals("keep me", lines.get(0));
+	}
+
+
+
+
+
+	/**
+	 * The source name was hardcoded, so piped input carried a "stdin:" prefix
+	 * even with prependFilenameToLine=false. The file reader always honored it.
+	 */
+	@Test
+	public void testPrependFilenameToLineIsHonored()
+	{
+		final CtrailProps props = CtrailProps.getInstance();
+
+		props.setPrependFilenameToLine(true);
+		new StdinReaderThread(stream("alpha\n"), _output, null, _mgr, null).run();
+		assertEquals(CtrailProps.STDIN_FILTER_NAME, _output.poll().getOrigFilename());
+
+		props.setPrependFilenameToLine(false);
+		new StdinReaderThread(stream("bravo\n"), _output, null, _mgr, null).run();
+		assertNull("no source prefix when prependFilenameToLine is false", _output.poll().getOrigFilename());
+
+		props.setPrependFilenameToLine(true);
+	}
+
+
+
+
+
+	/**
+	 * End-to-end: a <stdinfilter> declared in the config reaches the reader via
+	 * resolveStdinFilter() and filters the piped stream.
+	 */
+	@Test
+	public void testConfiguredStdinFilterIsApplied()
+	{
+		System.setProperty(CtrailProps.CTRAIL_CFG_KEY,
+				Paths.get(".", "src", "test", "resources", "configs", "ctrail-stdin-filter.xml").toString());
+		final CtrailProps props = CtrailProps.getInstance();
+
+		final StdinReaderThread reader = new StdinReaderThread(
+				stream("keepme one\nnoise two\nalsokeep three\ndropme keepme four\n"),
+				_output, null, _mgr, props.resolveStdinFilter());
+		reader.run();
+
+		final List<String> lines = drain();
+		assertEquals(2, lines.size());
+		assertEquals("keepme one", lines.get(0));
+		assertEquals("alsokeep three", lines.get(1));
+	}
+
+
+
+
+
+	/**
+	 * With filtering switched off, resolveStdinFilter() hands back nothing and
+	 * every line is shown.
+	 */
+	@Test
+	public void testFilteringDisabledShowsEveryLine()
+	{
+		System.setProperty(CtrailProps.CTRAIL_CFG_KEY,
+				Paths.get(".", "src", "test", "resources", "configs", "ctrail-stdin-filter.xml").toString());
+		final CtrailProps props = CtrailProps.getInstance();
+		props.setEnabledFileFiltering(false);
+
+		try
+		{
+			final StdinReaderThread reader = new StdinReaderThread(stream("keepme one\nnoise two\n"),
+					_output, null, _mgr, props.resolveStdinFilter());
+			reader.run();
+
+			assertEquals("-f false must show everything", 2, drain().size());
+		}
+		finally
+		{
+			props.setEnabledFileFiltering(true);
+		}
 	}
 
 }

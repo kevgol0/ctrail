@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- fixture: the pre-<stdinfilter> way of targeting piped input, a <filefilter>
+     whose <filename> is literally "stdin". Kept working for back-compat. -->
+<ctrail>
+
+  <inputFiles>
+    <maxInputFileCount>10</maxInputFileCount>
+  </inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>1000</maxPendingLines>
+    <prependFilenameToLine>true</prependFilenameToLine>
+    <skipAheadInBytes>0</skipAheadInBytes>
+    <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>true</matchFirstWord>
+  </execution>
+
+  <coloring>
+    <filename>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
+    </filename>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <colorpair>
+        <keyword>(ERR)</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+    </linecolors>
+  </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+    <excludesEnabled>true</excludesEnabled>
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+    <filefilter>
+      <filename>stdin</filename>
+      <includes>
+        <keyword>legacykeep</keyword>
+      </includes>
+      <excludes />
+    </filefilter>
+  </filtering>
+
+</ctrail>

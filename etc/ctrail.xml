@@ -121,9 +121,24 @@
             includes while ignoring every exclude term. overridden by -v -->
         <excludesEnabled>true</excludesEnabled>
 
-        <!-- verdict for a line that matched NEITHER list, on a file that
+        <!-- verdict for a line that matched NEITHER list, on a source that
             does have a filter. false makes each filter a strict allow-list -->
         <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+
+        <!-- applies when ctrail reads from a pipe rather than named files,
+            eg. "kubectl logs -f mypod | ctr". no <filename> is needed;
+            there is only ever one standard-in.
+
+            <stdinfilter>
+                <includes>
+                    <keyword>geo-lookup</keyword>
+                </includes>
+                <excludes>
+                    <keyword>heartbeat</keyword>
+                </excludes>
+            </stdinfilter>
+        -->
 
 
         <filefilter>

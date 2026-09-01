@@ -110,6 +110,15 @@ public class StdinReaderThread implements Runnable
 
 	private void readStdin()
 	{
+		//
+		// the source name was hardcoded, so piped input always carried a
+		// "stdin:" prefix even with prependFilenameToLine=false, which the file
+		// reader has always respected
+		//
+		final String source = CtrailProps.getInstance().isPrependFilenameToLine()
+				? CtrailProps.STDIN_FILTER_NAME
+				: null;
+
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
 		{
 			String line;
@@ -120,7 +129,7 @@ public class StdinReaderThread implements Runnable
 					continue;
 				}
 
-				_output.put(new LogLine("stdin", line, null));
+				_output.put(new LogLine(source, line, _searchFilter));
 			}
 		}
 		catch (final InterruptedException ex_)

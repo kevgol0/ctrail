@@ -61,6 +61,12 @@ public class CtrailProps
 	public static final String	CTRAIL_XML		= "ctrail.xml";
 	public static final String	CTRAIL_CFG_KEY	= "CTRAIL_CFG";
 
+	//
+	// the name reported for piped input, and the <filename> a legacy
+	// <filefilter> had to use to target std-in
+	//
+	public static final String STDIN_FILTER_NAME = "stdin";
+
 	@Getter @Setter private int _maxNbrInputFiles = 100;
 
 	@Getter @Setter private int _maxProcessingLinesPerThread = 1000;
@@ -102,6 +108,11 @@ public class CtrailProps
 	@Getter private final Hashtable<String, Integer> _keysToColorCount;
 
 	@Getter private final Hashtable<String, FileSearchFilter> _fileSearchFilters;
+
+	//
+	// <filtering><stdinfilter>; null when the config declares none
+	//
+	@Getter @Setter private FileSearchFilter _stdinFilter;
 
 	@Getter private final LinkedList<String> _keys;
 
@@ -354,9 +365,10 @@ public class CtrailProps
 			_logger.error(ex_.toString(), ex_);
 		}
 
+		initStdinFilter(config_);
+
 		FileSearchFilter fst;
 		String fname = "";
-		int filterTermsSz = 0;
 		for (int i = 0; i < filterCfgSz; i++)
 		{
 			try
@@ -375,34 +387,7 @@ public class CtrailProps
 					continue;
 				}
 
-				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).includes.keyword", i));
-				final List<String> includes = fst.getIncludeTerms();
-				String key;
-				String val;
-				for (int j = 0; j < filterTermsSz; j++)
-				{
-					key = format("filtering.filefilter({0}).includes.keyword({1})", i, j);
-					val = config_.getString(key);
-					if (isDuplicate(val, includes))
-					{
-						continue;
-					}
-					includes.add(val);
-				}
-
-				filterTermsSz = extractCount(config_, format("filtering.filefilter({0}).excludes.keyword", i));
-				final List<String> excludes = fst.getExcldueTerms();
-				for (int j = 0; j < filterTermsSz; j++)
-				{
-					key = format("filtering.filefilter({0}).excludes.keyword({1})", i, j);
-					val = config_.getString(key);
-					if (isDuplicate(val, includes) || isDuplicate(val, excludes))
-					{
-						continue;
-					}
-					excludes.add(val);
-				}
-
+				loadFilterTerms(config_, format("filtering.filefilter({0})", i), fst);
 
 				_fileSearchFilters.put(fst.getFileName(), fst);
 				if (_logger.isDebugEnabled())
@@ -424,6 +409,117 @@ public class CtrailProps
 				break;
 			}
 		}
+	}
+
+
+
+
+
+	/**
+	 * Loads the &lt;includes&gt;/&lt;excludes&gt; keyword lists hanging off
+	 * basePath_ into filter_. Shared by &lt;filefilter&gt; and
+	 * &lt;stdinfilter&gt; so the two stay in step.
+	 */
+	private void loadFilterTerms(final XMLConfiguration config_, final String basePath_, final FileSearchFilter filter_)
+	{
+		final List<String> includes = filter_.getIncludeTerms();
+		int termCount = extractCount(config_, basePath_ + ".includes.keyword");
+		String val;
+		for (int j = 0; j < termCount; j++)
+		{
+			val = config_.getString(format("{0}.includes.keyword({1})", basePath_, j));
+			if (isDuplicate(val, includes))
+			{
+				continue;
+			}
+			includes.add(val);
+		}
+
+		final List<String> excludes = filter_.getExcldueTerms();
+		termCount = extractCount(config_, basePath_ + ".excludes.keyword");
+		for (int j = 0; j < termCount; j++)
+		{
+			val = config_.getString(format("{0}.excludes.keyword({1})", basePath_, j));
+
+			//
+			// includes trump excludes, so a term listed in both is dropped
+			// from the exclude side rather than silently winning
+			//
+			if (isDuplicate(val, includes) || isDuplicate(val, excludes))
+			{
+				continue;
+			}
+			excludes.add(val);
+		}
+	}
+
+
+
+
+
+	/**
+	 * &lt;filtering&gt;&lt;stdinfilter&gt; applies when ctrail is reading from a
+	 * pipe rather than from named files. It needs no &lt;filename&gt; -- there is
+	 * only ever one standard-in.
+	 */
+	private void initStdinFilter(final XMLConfiguration config_)
+	{
+		if (config_.immutableChildConfigurationsAt("filtering.stdinfilter").size() <= 0)
+		{
+			_logger.trace("'stdinfilter' not present in config");
+			return;
+		}
+
+		try
+		{
+			final FileSearchFilter filter = new FileSearchFilter(STDIN_FILTER_NAME, _fileFilterDefaultsToInclude);
+			loadFilterTerms(config_, "filtering.stdinfilter", filter);
+			_stdinFilter = filter;
+			if (_logger.isDebugEnabled())
+			{
+				_logger.debug("loaded stdin filter:{}", filter.toString());
+			}
+		}
+		catch (final Exception ex_)
+		{
+			_logger.error("error loading stdin filter, cause:{}", ex_.toString());
+		}
+	}
+
+
+
+
+
+	/**
+	 * The filter to apply to piped input, or null for none.
+	 *
+	 * &lt;stdinfilter&gt; wins. Failing that, a &lt;filefilter&gt; whose
+	 * &lt;filename&gt; is literally "stdin" is honored: that was the only way to
+	 * filter std-in before &lt;stdinfilter&gt; existed, so configs in the wild
+	 * may rely on it.
+	 *
+	 * Returns null when filtering is switched off, so -f behaves the same for
+	 * piped input as it does for files.
+	 */
+	public FileSearchFilter resolveStdinFilter()
+	{
+		if (!isEnabledFileFiltering())
+		{
+			_logger.debug("filtering disabled, no stdin filter will be applied");
+			return null;
+		}
+
+		if (_stdinFilter != null)
+		{
+			return _stdinFilter;
+		}
+
+		final FileSearchFilter legacy = _fileSearchFilters.get(new FileSearchFilter(STDIN_FILTER_NAME, _fileFilterDefaultsToInclude).getFileName());
+		if (legacy != null)
+		{
+			_logger.debug("using legacy <filefilter><filename>stdin</filename>; prefer <stdinfilter>");
+		}
+		return legacy;
 	}
 
 
