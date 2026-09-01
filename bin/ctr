@@ -1,18 +1,17 @@
 #!/bin/bash
 
 jvm=$(which java)
-if [ "$jvm" == "" ] ; then
+if [ "$jvm" == "" ]; then
     echo "java is required, but not found"
     echo "cannot continue"
     exit 1
 fi
 
-LIB="./target/ctrail-1.0.0.jar"
-if [ ! -e $LIB ] ; then
+LIB="/usr/local/share/ctrail.jar"
+if [ ! -e "$LIB" ]; then
     echo "library not found: $LIB"
+    echo "run install.sh first"
     exit 1
 fi
 
-#exec $jvm -cp $LIB -jar -Xms128m -Xmx256m com.kagr.tools.ctrail.CtrailEntryPoint $*
-#exec $jvm -Xmx64m -jar $LIB $*
-exec $jvm -Xmx64m -jar $LIB $*
+exec "$jvm" -Xmx64m -jar "$LIB" "$@"
