@@ -75,6 +75,9 @@ ctr /var/log/*.log
 # pipe from stdin
 some-command | ctr
 
+# pipe from stdin with filtering (uses the "stdin" filefilter in config)
+CTRAIL_CFG=etc/ctrail-stdin-example.xml some-command | ctr
+
 # read entire file (not just tail)
 ctr -e /var/log/app.log
 
@@ -102,6 +105,12 @@ ctr --version
 | `-v` | `--exclude-filters` | Enable/disable exclude filters (`true`/`false`) |
 | `-h` | `--help` | Print help |
 |      | `--version` | Show version |
+
+### Stdin filtering
+
+When no file arguments are given, ctrail reads from stdin and applies the `<filefilter>` whose `<filename>` is `stdin`. This lets you include/exclude lines from piped output using the same keyword filtering available for files.
+
+See [`etc/ctrail-stdin-example.xml`](etc/ctrail-stdin-example.xml) for a ready-to-use example config.
 
 ---
 

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    ctrail stdin example config
+
+    Use this config when piping output through ctrail:
+
+        CTRAIL_CFG=etc/ctrail-stdin-example.xml
+        some-command | ctr
+
+    When no file arguments are given, ctrail reads from stdin and looks
+    for a filefilter whose <filename> is "stdin".  The filter's include
+    and exclude keywords work exactly as they do for file-based filters.
+-->
+<ctrail>
+
+    <inputFiles>
+        <maxInputFileCount>1</maxInputFileCount>
+    </inputFiles>
+
+    <execution>
+        <maxProcessingLines>1000</maxProcessingLines>
+        <maxPendingLines>100000</maxPendingLines>
+
+        <!-- stdin has no filename, so prepending is not useful -->
+        <prependFilenameToLine>false</prependFilenameToLine>
+
+        <!-- read from the beginning (no skip-ahead for a pipe) -->
+        <skipAheadInBytes>0</skipAheadInBytes>
+
+        <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+        <matchFirstWord>false</matchFirstWord>
+        <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    </execution>
+
+
+    <coloring>
+        <filename>
+            <blankLineOnFileChange>false</blankLineOnFileChange>
+        </filename>
+
+        <linecolors>
+            <defaultFgColor>white</defaultFgColor>
+
+            <colorpair>
+                <keyword>(dbg)</keyword>
+                <fgcolor>blue</fgcolor>
+            </colorpair>
+
+            <colorpair>
+                <keyword>(inf)</keyword>
+                <fgcolor>yellow</fgcolor>
+            </colorpair>
+
+            <colorpair>
+                <keyword>(err)</keyword>
+                <fgcolor>red</fgcolor>
+            </colorpair>
+
+            <colorpair>
+                <keyword>(sev)</keyword>
+                <fgcolor>red</fgcolor>
+            </colorpair>
+
+            <colorpair>
+                <keyword>(wrn)</keyword>
+                <fgcolor>purple</fgcolor>
+            </colorpair>
+
+            <colorpair>
+                <keyword>(cfg)</keyword>
+                <fgcolor>cyan</fgcolor>
+            </colorpair>
+        </linecolors>
+    </coloring>
+
+
+    <!--
+        stdin filtering
+
+        The magic filename "stdin" matches the internal source name ctrail
+        assigns when reading from a pipe.  Include/exclude keywords work
+        the same way as file-based filters.
+
+        In this example only lines containing "ERROR" or "WARN" are shown,
+        and lines containing "healthcheck" are suppressed even if they
+        match an include term.
+    -->
+    <filtering>
+        <enabled>true</enabled>
+
+        <!-- when a line matches neither include nor exclude, drop it -->
+        <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+        <filefilter>
+            <!-- "stdin" is the key ctrail uses for piped input -->
+            <filename>stdin</filename>
+            <includes>
+                <keyword>ERROR</keyword>
+                <keyword>WARN</keyword>
+            </includes>
+            <excludes>
+                <keyword>healthcheck</keyword>
+            </excludes>
+        </filefilter>
+    </filtering>
+
+</ctrail>
