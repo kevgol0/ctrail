@@ -288,7 +288,17 @@ public class CtrailEntryPoint implements IShutdownManager
 			if (line.hasOption("h"))
 			{
 				final HelpFormatter formatter = new HelpFormatter();
-				formatter.printHelp("ctr", options);
+				final String header = "Color Trail - a tail -f replacement with colored output\n\n";
+				final String footer = "\nAvailable colors (case-insensitive):\n"
+						+ "  Regular:     BLACK  RED  GREEN  YELLOW  BLUE  PURPLE  CYAN  WHITE\n"
+						+ "  Bold:        *_BOLD  (e.g. RED_BOLD)  also: ORANGE (= YELLOW_BOLD)\n"
+						+ "  Underlined:  *_UNDERLINED  (e.g. RED_UNDERLINED)\n"
+						+ "  Bright:      *_BRIGHT  (e.g. RED_BRIGHT)\n"
+						+ "  Bold Bright: *_BOLD_BRIGHT  (e.g. RED_BOLD_BRIGHT)\n"
+						+ "  Background:  *_BACKGROUND  (e.g. RED_BACKGROUND)\n"
+						+ "  Bg Bright:   *_BACKGROUND_BRIGHT  (e.g. RED_BACKGROUND_BRIGHT)\n";
+				formatter.setWidth(100);
+				formatter.printHelp("ctr [options] [file ...]", header, options, footer);
 				System.exit(0);
 			}
 

@@ -43,25 +43,26 @@
             on a line, then the line will be colored with the FIRST keyword
             found on that line -->
         <linecolors>
-            <!-- COLORS ARE:
-                BLACK
-                BLUE
-                CYAN
-                DEFAULT
-                GREEN
-                RED
-                WHITE
-                YELLOW
+            <!-- COLORS ARE (case-insensitive):
 
-                BLACK_UNDERLINED
-                BLUE_UNDERLINED
-                CYAN_UNDERLINED
-                DEFAULT_UNDERLINED
-                GREEN_UNDERLINED
-                RED_UNDERLINED
-                WHITE_UNDERLINED
-                YELLOW_UNDERLINED
-
+                Regular:           BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE
+                Bold:              BLACK_BOLD, RED_BOLD, GREEN_BOLD, ORANGE / YELLOW_BOLD,
+                                   BLUE_BOLD, PURPLE_BOLD, CYAN_BOLD, WHITE_BOLD
+                Underlined:        BLACK_UNDERLINED, RED_UNDERLINED, GREEN_UNDERLINED,
+                                   YELLOW_UNDERLINED, BLUE_UNDERLINED, PURPLE_UNDERLINED,
+                                   CYAN_UNDERLINED, WHITE_UNDERLINED
+                Bright:            BLACK_BRIGHT, RED_BRIGHT, GREEN_BRIGHT, YELLOW_BRIGHT,
+                                   BLUE_BRIGHT, PURPLE_BRIGHT, CYAN_BRIGHT, WHITE_BRIGHT
+                Bold Bright:       BLACK_BOLD_BRIGHT, RED_BOLD_BRIGHT, GREEN_BOLD_BRIGHT,
+                                   YELLOW_BOLD_BRIGHT, BLUE_BOLD_BRIGHT, PURPLE_BOLD_BRIGHT,
+                                   CYAN_BOLD_BRIGHT, WHITE_BOLD_BRIGHT
+                Background:        BLACK_BACKGROUND, RED_BACKGROUND, GREEN_BACKGROUND,
+                                   YELLOW_BACKGROUND, BLUE_BACKGROUND, PURPLE_BACKGROUND,
+                                   CYAN_BACKGROUND, WHITE_BACKGROUND
+                Background Bright: BLACK_BACKGROUND_BRIGHT, RED_BACKGROUND_BRIGHT,
+                                   GREEN_BACKGROUND_BRIGHT, YELLOW_BACKGROUND_BRIGHT,
+                                   BLUE_BACKGROUND_BRIGHT, PURPLE_BACKGROUND_BRIGHT,
+                                   CYAN_BACKGROUND_BRIGHT, WHITE_BACKGROUND_BRIGHT
             -->
 
             <defaultFgColor>white</defaultFgColor>

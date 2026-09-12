@@ -438,6 +438,99 @@ public class CtrailProps
 			return ConsoleColors.CYAN_UNDERLINED;
 		case "WHITE_UNDERLINED":
 			return ConsoleColors.WHITE_UNDERLINED;
+
+		// Bold
+		case "BLACK_BOLD":
+			return ConsoleColors.BLACK_BOLD;
+		case "RED_BOLD":
+			return ConsoleColors.RED_BOLD;
+		case "GREEN_BOLD":
+			return ConsoleColors.GREEN_BOLD;
+		case "ORANGE":
+			return ConsoleColors.ORANGE;
+		case "YELLOW_BOLD":
+			return ConsoleColors.ORANGE;
+		case "BLUE_BOLD":
+			return ConsoleColors.BLUE_BOLD;
+		case "PURPLE_BOLD":
+			return ConsoleColors.PURPLE_BOLD;
+		case "CYAN_BOLD":
+			return ConsoleColors.CYAN_BOLD;
+		case "WHITE_BOLD":
+			return ConsoleColors.WHITE_BOLD;
+
+		// Bright (high intensity)
+		case "BLACK_BRIGHT":
+			return ConsoleColors.BLACK_BRIGHT;
+		case "RED_BRIGHT":
+			return ConsoleColors.RED_BRIGHT;
+		case "GREEN_BRIGHT":
+			return ConsoleColors.GREEN_BRIGHT;
+		case "YELLOW_BRIGHT":
+			return ConsoleColors.YELLOW_BRIGHT;
+		case "BLUE_BRIGHT":
+			return ConsoleColors.BLUE_BRIGHT;
+		case "PURPLE_BRIGHT":
+			return ConsoleColors.PURPLE_BRIGHT;
+		case "CYAN_BRIGHT":
+			return ConsoleColors.CYAN_BRIGHT;
+		case "WHITE_BRIGHT":
+			return ConsoleColors.WHITE_BRIGHT;
+
+		// Background
+		case "BLACK_BACKGROUND":
+			return ConsoleColors.BLACK_BACKGROUND;
+		case "RED_BACKGROUND":
+			return ConsoleColors.RED_BACKGROUND;
+		case "GREEN_BACKGROUND":
+			return ConsoleColors.GREEN_BACKGROUND;
+		case "YELLOW_BACKGROUND":
+			return ConsoleColors.YELLOW_BACKGROUND;
+		case "BLUE_BACKGROUND":
+			return ConsoleColors.BLUE_BACKGROUND;
+		case "PURPLE_BACKGROUND":
+			return ConsoleColors.PURPLE_BACKGROUND;
+		case "CYAN_BACKGROUND":
+			return ConsoleColors.CYAN_BACKGROUND;
+		case "WHITE_BACKGROUND":
+			return ConsoleColors.WHITE_BACKGROUND;
+
+		// Bold Bright (bold + high intensity)
+		case "BLACK_BOLD_BRIGHT":
+			return ConsoleColors.BLACK_BOLD_BRIGHT;
+		case "RED_BOLD_BRIGHT":
+			return ConsoleColors.RED_BOLD_BRIGHT;
+		case "GREEN_BOLD_BRIGHT":
+			return ConsoleColors.GREEN_BOLD_BRIGHT;
+		case "YELLOW_BOLD_BRIGHT":
+			return ConsoleColors.YELLOW_BOLD_BRIGHT;
+		case "BLUE_BOLD_BRIGHT":
+			return ConsoleColors.BLUE_BOLD_BRIGHT;
+		case "PURPLE_BOLD_BRIGHT":
+			return ConsoleColors.PURPLE_BOLD_BRIGHT;
+		case "CYAN_BOLD_BRIGHT":
+			return ConsoleColors.CYAN_BOLD_BRIGHT;
+		case "WHITE_BOLD_BRIGHT":
+			return ConsoleColors.WHITE_BOLD_BRIGHT;
+
+		// Background Bright (high intensity background)
+		case "BLACK_BACKGROUND_BRIGHT":
+			return ConsoleColors.BLACK_BACKGROUND_BRIGHT;
+		case "RED_BACKGROUND_BRIGHT":
+			return ConsoleColors.RED_BACKGROUND_BRIGHT;
+		case "GREEN_BACKGROUND_BRIGHT":
+			return ConsoleColors.GREEN_BACKGROUND_BRIGHT;
+		case "YELLOW_BACKGROUND_BRIGHT":
+			return ConsoleColors.YELLOW_BACKGROUND_BRIGHT;
+		case "BLUE_BACKGROUND_BRIGHT":
+			return ConsoleColors.BLUE_BACKGROUND_BRIGHT;
+		case "PURPLE_BACKGROUND_BRIGHT":
+			return ConsoleColors.PURPLE_BACKGROUND_BRIGHT;
+		case "CYAN_BACKGROUND_BRIGHT":
+			return ConsoleColors.CYAN_BACKGROUND_BRIGHT;
+		case "WHITE_BACKGROUND_BRIGHT":
+			return ConsoleColors.WHITE_BACKGROUND_BRIGHT;
+
 		default:
 			_logger.warn("color:{} not recognized, returning null", color_);
 		}
