@@ -62,7 +62,64 @@ At least one must be present or ctrail will not start. Place a `ctrail.xml` in a
 </ctrail>
 ```
 
-**Available colors:** `BLACK`, `BLUE`, `CYAN`, `DEFAULT`, `GREEN`, `RED`, `WHITE`, `YELLOW` — each also available as `*_UNDERLINED` (e.g. `RED_UNDERLINED`).
+### Available colors
+
+Color names are **case-insensitive** in the XML config.
+
+| Category | Values |
+|----------|--------|
+| **Regular** | `BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `PURPLE`, `CYAN`, `WHITE` |
+| **Bold** | `BLACK_BOLD`, `RED_BOLD`, `GREEN_BOLD`, `ORANGE` / `YELLOW_BOLD`, `BLUE_BOLD`, `PURPLE_BOLD`, `CYAN_BOLD`, `WHITE_BOLD` |
+| **Underlined** | `BLACK_UNDERLINED`, `RED_UNDERLINED`, `GREEN_UNDERLINED`, `YELLOW_UNDERLINED`, `BLUE_UNDERLINED`, `PURPLE_UNDERLINED`, `CYAN_UNDERLINED`, `WHITE_UNDERLINED` |
+| **Bright** (high intensity) | `BLACK_BRIGHT`, `RED_BRIGHT`, `GREEN_BRIGHT`, `YELLOW_BRIGHT`, `BLUE_BRIGHT`, `PURPLE_BRIGHT`, `CYAN_BRIGHT`, `WHITE_BRIGHT` |
+| **Bold Bright** | `BLACK_BOLD_BRIGHT`, `RED_BOLD_BRIGHT`, `GREEN_BOLD_BRIGHT`, `YELLOW_BOLD_BRIGHT`, `BLUE_BOLD_BRIGHT`, `PURPLE_BOLD_BRIGHT`, `CYAN_BOLD_BRIGHT`, `WHITE_BOLD_BRIGHT` |
+| **Background** | `BLACK_BACKGROUND`, `RED_BACKGROUND`, `GREEN_BACKGROUND`, `YELLOW_BACKGROUND`, `BLUE_BACKGROUND`, `PURPLE_BACKGROUND`, `CYAN_BACKGROUND`, `WHITE_BACKGROUND` |
+| **Background Bright** | `BLACK_BACKGROUND_BRIGHT`, `RED_BACKGROUND_BRIGHT`, `GREEN_BACKGROUND_BRIGHT`, `YELLOW_BACKGROUND_BRIGHT`, `BLUE_BACKGROUND_BRIGHT`, `PURPLE_BACKGROUND_BRIGHT`, `CYAN_BACKGROUND_BRIGHT`, `WHITE_BACKGROUND_BRIGHT` |
+
+> `ORANGE` is an alias for `YELLOW_BOLD` (bold yellow).
+
+#### Examples
+
+Bold red for errors:
+```xml
+<colorpair>
+  <keyword>ERROR</keyword>
+  <fgcolor>red_bold</fgcolor>
+</colorpair>
+```
+
+Bright cyan for debug lines:
+```xml
+<colorpair>
+  <keyword>(dbg)</keyword>
+  <fgcolor>cyan_bright</fgcolor>
+</colorpair>
+```
+
+Red background for critical alerts:
+```xml
+<colorpair>
+  <keyword>FATAL</keyword>
+  <fgcolor>red_background</fgcolor>
+</colorpair>
+```
+
+Bold-bright green for success messages:
+```xml
+<colorpair>
+  <keyword>SUCCESS</keyword>
+  <fgcolor>green_bold_bright</fgcolor>
+</colorpair>
+```
+
+Combined foreground and filename colors:
+```xml
+<colorpair>
+  <keyword>WARN</keyword>
+  <fgcolor>orange</fgcolor>
+  <flcolor>yellow_underlined</flcolor>
+</colorpair>
+```
 
 ---
 
