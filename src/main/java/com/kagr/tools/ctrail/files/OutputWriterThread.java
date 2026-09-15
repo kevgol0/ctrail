@@ -45,8 +45,17 @@ public class OutputWriterThread extends Thread
     @Getter
     LineFormatter _formatter;
 
+    //
+    // written by the shutdown thread, read by this one -- without volatile the
+    // run-loop may never observe the flag flipping to false
+    //
     @Getter
-    boolean _shouldContinue;
+    volatile boolean _shouldContinue;
+
+    //
+    // how long take() may park before the loop re-checks _shouldContinue
+    //
+    private static final long POLL_TIMEOUT_MILLIS = 100;
 
 
 
@@ -72,7 +81,18 @@ public class OutputWriterThread extends Thread
         {
             try
             {
-                _sout.println(_formatter.format(_output.take()));
+                //
+                // poll rather than take: shutdown() flips _shouldContinue
+                // without interrupting, and a parked take() would never notice,
+                // leaving this non-daemon thread alive and the JVM hung
+                //
+                final LogLine next = _output.poll(POLL_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+                if (next == null)
+                {
+                    continue;
+                }
+
+                _sout.println(_formatter.format(next));
 
                 if (_logger.isTraceEnabled())
                 {
@@ -91,9 +111,9 @@ public class OutputWriterThread extends Thread
 
 
         // remove the rest of the entries from the q
-        // however, use the pending size (in case someone 
+        // however, use the pending size (in case someone
         // else keeps adding to it) - this has been marked as close
-        int sz = _output.size() - 1;
+        int sz = _output.size();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("outside of standard runloop, will consume remaining messages:{}", sz);
@@ -106,7 +126,8 @@ public class OutputWriterThread extends Thread
             try
             {
                 //
-                // latest entry - don't wait forever
+                // oldest entry first - don't wait forever. pollLast() drained
+                // the tail in reverse, printing the backlog out of order
                 //
                 line = _output.pollFirst(1, TimeUnit.MILLISECONDS);
                 if (line == null)
@@ -133,6 +154,12 @@ public class OutputWriterThread extends Thread
                 _logger.error(ex_.toString());
             }
         }
+
+        //
+        // a redirected PrintStream is not auto-flushing, so the drained backlog
+        // can otherwise sit in the buffer and never reach the destination
+        //
+        _sout.flush();
 
         if (_logger.isTraceEnabled())
         {

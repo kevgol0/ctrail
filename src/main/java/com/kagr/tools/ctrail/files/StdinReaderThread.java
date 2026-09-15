@@ -1,6 +1,6 @@
 /****************************************************************************
  * FILE: StdinReaderThread.java
- * DSCRPT: 
+ * DSCRPT:
  ****************************************************************************/
 
 
@@ -16,8 +16,8 @@ package com.kagr.tools.ctrail.files;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Deque;
 import java.util.Locale;
+import java.util.concurrent.BlockingDeque;
 
 
 
@@ -43,7 +43,11 @@ public class StdinReaderThread implements Runnable
 {
 	private final InputStream _iStream;
 
-	@Getter @Setter(AccessLevel.PROTECTED) private Deque<LogLine> _output;
+	//
+	// must stay a BlockingDeque: the queue is bounded by maxPendingLines and
+	// Deque.add() throws once it fills. put() applies back-pressure instead
+	//
+	@Getter @Setter(AccessLevel.PROTECTED) private BlockingDeque<LogLine> _output;
 
 	@Getter private final String _match;
 
@@ -55,7 +59,7 @@ public class StdinReaderThread implements Runnable
 
 
 	public StdinReaderThread(final InputStream is_,
-			@NonNull final Deque<LogLine> output_,
+			@NonNull final BlockingDeque<LogLine> output_,
 			final String match_,
 			final IShutdownManager shutdownMgr_,
 			final FileSearchFilter filter_)
@@ -75,18 +79,13 @@ public class StdinReaderThread implements Runnable
 	@Override
 	public void run()
 	{
-		if (_searchFilter != null)
-		{
-			runWithSearchFiler();
-		}
-		else if (_match != null)
-		{
-			runWithMatch();
-		}
-		else
-		{
-			runPassthrough();
-		}
+		//
+		// a single read-loop covers every combination. the old code branched
+		// filter-or-match and read nothing at all when neither was supplied,
+		// so a plain "cat file | ctr" produced no output whatsoever. it also
+		// ignored -m entirely whenever a stdin filter happened to be configured
+		//
+		readStdin();
 
 
 		if (_logger.isTraceEnabled())
@@ -96,71 +95,47 @@ public class StdinReaderThread implements Runnable
 
 
 		//
-		// stop the output thread as 
+		// stop the output thread as
 		// soon as they finish processing
 		//
-		_ender.initiateShutdown();
+		if (_ender != null)
+		{
+			_ender.initiateShutdown();
+		}
 	}
 
 
 
 
 
-	private void runWithSearchFiler()
+	private void readStdin()
 	{
+		//
+		// the source name was hardcoded, so piped input always carried a
+		// "stdin:" prefix even with prependFilenameToLine=false, which the file
+		// reader has always respected
+		//
+		final String source = CtrailProps.getInstance().isPrependFilenameToLine()
+				? CtrailProps.STDIN_FILTER_NAME
+				: null;
+
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
 		{
 			String line;
 			while ((line = reader.readLine()) != null)
 			{
-				//
-				// should I show this line - based off of config
-				//
-				if (_searchFilter.shouldExcludeLineDueToSeachTerms(line))
+				if (!shouldEmit(line))
 				{
 					continue;
 				}
 
-
-				//
-				// the "default-should-include" is taken care of in the include check
-				//
-				else if (_searchFilter.shouldIncludeLineDueToSeachTerms(line))
-				{
-					_output.add(new LogLine("stdin", line, null));
-				}
+				_output.put(new LogLine(source, line, _searchFilter));
 			}
 		}
-		catch (final Exception ex_)
+		catch (final InterruptedException ex_)
 		{
-			_logger.error(ex_.toString());
-		}
-
-	}
-
-
-
-
-
-	private void runWithMatch()
-	{
-		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
-		final String needle = caseSensitive ? _match : _match.toLowerCase(Locale.ROOT);
-
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
-		{
-			String line;
-			while ((line = reader.readLine()) != null)
-			{
-				//
-				// command line dynamic match, respecting case sensitivity setting
-				//
-				final String haystack = caseSensitive ? line : line.toLowerCase(Locale.ROOT);
-				if (haystack.contains(needle))
-				{
-					_output.add(new LogLine("stdin", line, null));
-				}
-			}
+			_logger.warn("Interrupted! - breaking out of std-in read-loop");
+			Thread.currentThread().interrupt();
 		}
 		catch (final Exception ex_)
 		{
@@ -170,23 +145,44 @@ public class StdinReaderThread implements Runnable
 
 
 
-	/**
-	 * reads all lines from stdin without any filtering
-	 */
-	private void runPassthrough()
+
+
+	private boolean shouldEmit(final String line_)
 	{
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
+		//
+		// command line dynamic match, honoring the configured case sensitivity
+		// the same way the file reader does
+		//
+		if (_match != null)
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
+			final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
+			final String needle = caseSensitive ? _match : _match.toLowerCase(Locale.ROOT);
+			final String haystack = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
+			if (!haystack.contains(needle))
 			{
-				_output.add(new LogLine("stdin", line, null));
+				return false;
 			}
 		}
-		catch (final Exception ex_)
+
+		if (_searchFilter == null)
 		{
-			_logger.error(ex_.toString());
+			return true;
 		}
+
+
+		//
+		// should I show this line - based off of config
+		//
+		if (_searchFilter.shouldExcludeLineDueToSeachTerms(line_))
+		{
+			return false;
+		}
+
+
+		//
+		// the "default-should-include" is taken care of in the include check
+		//
+		return _searchFilter.shouldIncludeLineDueToSeachTerms(line_);
 	}
 
 }

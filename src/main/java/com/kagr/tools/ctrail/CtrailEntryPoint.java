@@ -106,14 +106,15 @@ public class CtrailEntryPoint implements IShutdownManager
 		_fileTrackers = getFilesFromArgs(args_);
 		if (_fileTrackers.size() <= 0)
 		{
-			FileSearchFilter filter = null;
-			if (CtrailProps.getInstance().getFileSearchFilters() != null)
+			//
+			// resolveStdinFilter() picks <stdinfilter>, falls back to the
+			// legacy <filefilter><filename>stdin</filename>, and honors the
+			// filtering master switch the same way the file path does
+			//
+			final FileSearchFilter filter = CtrailProps.getInstance().resolveStdinFilter();
+			if (filter != null)
 			{
-				filter = CtrailProps.getInstance().getFileSearchFilters().get("stdin$");
-				if (filter != null)
-				{
-					_logger.trace("filter for stdin found:{}", filter.toString());
-				}
+				_logger.trace("filter for stdin found:{}", filter.toString());
 			}
 			_reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern, this, filter));
 			_reader.setName("istream-reader");
@@ -240,12 +241,14 @@ public class CtrailEntryPoint implements IShutdownManager
 
 		options.addOption(Option.builder("f")
 				.longOpt("filters").hasArg()
-				.desc("set include filters, not case sensitive; overrides config for file-filtering; <arg=true|false>")
+				.argName("true|false")
+				.desc("enable/disable per-file filtering entirely; overrides <filtering><enabled> in the config")
 				.build());
 
 		options.addOption(Option.builder("v")
 				.longOpt("exclude-filters").hasArg()
-				.desc("set exculide filter, not-case sensitive; overrides config for file-filtering; <arg=true|false>")
+				.argName("true|false")
+				.desc("enable/disable only the <excludes> terms; overrides <filtering><excludesEnabled> in the config")
 				.build());
 
 		options.addOption(Option.builder("h")
@@ -277,6 +280,10 @@ public class CtrailEntryPoint implements IShutdownManager
 			}
 			if (line.hasOption("v"))
 			{
+				//
+				// -v toggles the exclude half of filtering; it used to set the
+				// same flag as -f, so the two options were indistinguishable
+				//
 				CtrailProps.getInstance().setEnabledExcludeFiltering(Boolean.parseBoolean(line.getOptionValue("v")));
 			}
 			if (line.hasOption("version"))

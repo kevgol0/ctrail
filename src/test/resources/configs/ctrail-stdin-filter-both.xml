@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- fixture: both the new <stdinfilter> and the legacy
+     <filefilter><filename>stdin</filename> are present. <stdinfilter> wins. -->
+<ctrail>
+
+  <inputFiles>
+    <maxInputFileCount>10</maxInputFileCount>
+  </inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>1000</maxPendingLines>
+    <prependFilenameToLine>true</prependFilenameToLine>
+    <skipAheadInBytes>0</skipAheadInBytes>
+    <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>true</matchFirstWord>
+  </execution>
+
+  <coloring>
+    <filename>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
+    </filename>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <colorpair>
+        <keyword>(ERR)</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+    </linecolors>
+  </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+    <excludesEnabled>true</excludesEnabled>
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+    <stdinfilter>
+      <includes>
+        <keyword>newwins</keyword>
+      </includes>
+      <excludes />
+    </stdinfilter>
+
+    <filefilter>
+      <filename>stdin</filename>
+      <includes>
+        <keyword>legacykeep</keyword>
+      </includes>
+      <excludes />
+    </filefilter>
+  </filtering>
+
+</ctrail>

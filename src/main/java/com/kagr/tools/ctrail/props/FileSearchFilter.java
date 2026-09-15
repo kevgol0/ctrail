@@ -38,6 +38,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileSearchFilter
 {
+	//
+	// '*' and '.' get their own cases in toRegEx; these are the rest
+	//
+	private static final String REGEX_METACHARS = "\\+?^$[]{}()|";
+
 	@NonNull @Getter @Setter private String _fileName;
 
 	@Getter private List<String> _includeTerms = new LinkedList<String>();
@@ -50,11 +55,11 @@ public class FileSearchFilter
 
 
 
-	public FileSearchFilter(final String fileName_, boolean isDefaultExclude_)
+	public FileSearchFilter(final String fileName_, boolean isDefaultInclude_)
 	{
 		_fileName = toRegEx(fileName_);
 		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
-		_defLineInclude = isDefaultExclude_;
+		_defLineInclude = isDefaultInclude_;
 	}
 
 
@@ -77,6 +82,15 @@ public class FileSearchFilter
 				buff.append("\\.");
 				break;
 			default:
+				//
+				// '*' is our only wildcard; every other regex metacharacter in a
+				// filename is a literal and must be escaped, or a name such as
+				// "app(1).log" compiles into a completely different pattern
+				//
+				if (REGEX_METACHARS.indexOf(val) >= 0)
+				{
+					buff.append('\\');
+				}
 				buff.append(val);
 				break;
 			}
@@ -156,7 +170,9 @@ public class FileSearchFilter
 			return false;
 		}
 
-		// skip exclude check if exclude filtering is disabled
+		//
+		// -v / filtering.excludesEnabled turns the exclude list off wholesale
+		//
 		if (!CtrailProps.getInstance().isEnabledExcludeFiltering())
 		{
 			return false;

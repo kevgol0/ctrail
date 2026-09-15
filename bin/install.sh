@@ -47,4 +47,3 @@ sudo mv "/tmp/ctr" /usr/local/bin/ctr
 sudo chmod +x /usr/local/bin/ctr
 
 echo "ctrail v${VERSION} installed successfully."
-

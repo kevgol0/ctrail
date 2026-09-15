@@ -114,12 +114,32 @@
         from specific files...
     -->
     <filtering>
+        <!-- master switch; false attaches no filter to any file, so
+            every line is shown. overridden by -f on the command line -->
         <enabled>true</enabled>
 
-        <!-- specifies if a line should be included in the outout,
-            if a is specified, but no search terms matched either the include or
-            the exclude list -->
+        <!-- applies the <excludes> lists below. set false to keep the
+            includes while ignoring every exclude term. overridden by -v -->
+        <excludesEnabled>true</excludesEnabled>
+
+        <!-- verdict for a line that matched NEITHER list, on a source that
+            does have a filter. false makes each filter a strict allow-list -->
         <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+
+        <!-- applies when ctrail reads from a pipe rather than named files,
+            eg. "kubectl logs -f mypod | ctr". no <filename> is needed;
+            there is only ever one standard-in.
+
+            <stdinfilter>
+                <includes>
+                    <keyword>geo-lookup</keyword>
+                </includes>
+                <excludes>
+                    <keyword>heartbeat</keyword>
+                </excludes>
+            </stdinfilter>
+        -->
 
 
         <filefilter>

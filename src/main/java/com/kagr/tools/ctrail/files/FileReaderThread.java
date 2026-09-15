@@ -14,7 +14,6 @@ package com.kagr.tools.ctrail.files;
 
 
 import java.io.IOException;
-import java.util.Deque;
 import java.util.Locale;
 import java.util.concurrent.BlockingDeque;
 
@@ -42,7 +41,12 @@ public class FileReaderThread implements Runnable
 {
 	@Getter @Setter(AccessLevel.PRIVATE) private BlockingDeque<FileTailTracker> _fileTrackers;
 
-	@Getter @Setter(AccessLevel.PRIVATE) private Deque<LogLine> _output;
+	//
+	// must stay a BlockingDeque: the queue is bounded by maxPendingLines and
+	// Deque.add() throws IllegalStateException once it fills, which killed this
+	// thread before it could signal shutdown. put() blocks instead
+	//
+	@Getter @Setter(AccessLevel.PRIVATE) private BlockingDeque<LogLine> _output;
 
 	@Getter @Setter private int _maxLinesPerThread;
 
@@ -58,7 +62,7 @@ public class FileReaderThread implements Runnable
 
 
 	public FileReaderThread(@NonNull final BlockingDeque<FileTailTracker> fileTrackers_,
-			@NonNull final Deque<LogLine> strOutput_,
+			@NonNull final BlockingDeque<LogLine> strOutput_,
 			final String match_,
 			@NonNull final IShutdownManager smgr_)
 	{
@@ -113,7 +117,7 @@ public class FileReaderThread implements Runnable
 
 					if (_props.isBlankLineOnFileChange())
 					{
-						_output.add(new LogLine(null, "", null));
+						_output.put(new LogLine(null, "", null));
 					}
 				}
 				else
@@ -172,7 +176,7 @@ public class FileReaderThread implements Runnable
 
 
 
-	private final int readToFilePosition(final FileTailTracker tracker_) throws IOException
+	private final int readToFilePosition(final FileTailTracker tracker_) throws IOException, InterruptedException
 	{
 		String line;
 		int nReadLines = 0;
@@ -186,6 +190,17 @@ public class FileReaderThread implements Runnable
 				break;
 			}
 
+			//
+			// consumed bytes must be recorded whether or not the line survives
+			// filtering. only crediting emitted lines left lastReadPosition
+			// permanently behind EOF, so getRemainingSize() never reached zero
+			// and the run-loop spun without ever sleeping. record this BEFORE any
+			// filter `continue` below, or the spin bug returns for filtered lines
+			//
+			readPos = tracker_.getFile().getFilePointer();
+			tracker_.setLastReadPosition(readPos);
+
+			// -m/--match: drop lines that do not contain the requested needle
 			if (_match != null)
 			{
 				final String needle = _props.isLineSearchCaseSensitiveMatching() ? _match : _match.toLowerCase(Locale.ROOT);
@@ -196,22 +211,19 @@ public class FileReaderThread implements Runnable
 				}
 			}
 
-			if (tracker_.shouldExcludeLineDueToSeachTerms(line))
+			if (!shouldEmit(tracker_, line))
 			{
 				continue;
 			}
 
 			if (_props.isPrependFilenameToLine())
 			{
-				_output.add(new LogLine(tracker_.getFileName(), line, tracker_.getFileSearchFilter()));
+				_output.put(new LogLine(tracker_.getFileName(), line, tracker_.getFileSearchFilter()));
 			}
 			else
 			{
-				_output.add(new LogLine(null, line, tracker_.getFileSearchFilter()));
+				_output.put(new LogLine(null, line, tracker_.getFileSearchFilter()));
 			}
-			readPos = tracker_.getFile().getFilePointer();
-			tracker_.setLastReadPosition(readPos);
-
 
 			nReadLines += 1;
 			if (nReadLines >= _maxLinesPerThread)
@@ -220,6 +232,36 @@ public class FileReaderThread implements Runnable
 			}
 		}
 		return nReadLines;
+	}
+
+
+
+
+
+	/**
+	 * Command-line match first, then the file's exclude list, then its include
+	 * list. Includes were previously only honored for stdin, so configured
+	 * &lt;includes&gt; entries had no effect at all when tailing files.
+	 */
+	private boolean shouldEmit(final FileTailTracker tracker_, final String line_)
+	{
+		if (_match != null)
+		{
+			final boolean caseSensitive = _props.isLineSearchCaseSensitiveMatching();
+			final String needle = caseSensitive ? _match : _match.toLowerCase(Locale.ROOT);
+			final String haystack = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
+			if (!haystack.contains(needle))
+			{
+				return false;
+			}
+		}
+
+		if (tracker_.shouldExcludeLineDueToSeachTerms(line_))
+		{
+			return false;
+		}
+
+		return tracker_.shouldIncludeLineDueToSeachTerms(line_);
 	}
 
 

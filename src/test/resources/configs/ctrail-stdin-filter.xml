@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- fixture: <filtering><stdinfilter> applied to piped input -->
+<ctrail>
+
+  <inputFiles>
+    <maxInputFileCount>10</maxInputFileCount>
+  </inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>1000</maxPendingLines>
+    <prependFilenameToLine>true</prependFilenameToLine>
+    <skipAheadInBytes>0</skipAheadInBytes>
+    <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>true</matchFirstWord>
+  </execution>
+
+  <coloring>
+    <filename>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
+    </filename>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <colorpair>
+        <keyword>(ERR)</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+    </linecolors>
+  </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+    <excludesEnabled>true</excludesEnabled>
+
+    <!-- strict allow-list: only lines hitting an include term survive -->
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+    <stdinfilter>
+      <includes>
+        <keyword>keepme</keyword>
+        <keyword>alsokeep</keyword>
+      </includes>
+      <excludes>
+        <keyword>dropme</keyword>
+      </excludes>
+    </stdinfilter>
+
+    <filefilter>
+      <filename>other.log</filename>
+      <includes>
+        <keyword>unrelated</keyword>
+      </includes>
+      <excludes />
+    </filefilter>
+  </filtering>
+
+</ctrail>

@@ -15,6 +15,7 @@ package com.kagr.tools.ctrail.unit;
 
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
 
 
 
@@ -33,25 +34,51 @@ public class LineFormatter
 {
     private static final String _reset = ConsoleColors.RESET;
 
-    private final CtrailProps _props;
-    private final Hashtable<String, String> _keysToColors;
-    private final Hashtable<String, String> _keysToFileColors;
-    private final List<String> _keys;
-    private final int _keysSz;
-    private final String _defFgColor;
-    private final boolean _firstWordMatch;
-    private final boolean _caseSensitive;
+    // cached config, refreshed only when the props instance is swapped
+    private CtrailProps _props;
+    private Hashtable<String, String> _keysToColors;
+    private Hashtable<String, String> _keysToFileColors;
+    private List<String> _keys;
+    private String[] _keyArray;
+    private int _keysSz;
+    private String _defFgColor;
+    private boolean _firstWordMatch;
+    private boolean _caseSensitive;
 
     public LineFormatter()
     {
-        _props = CtrailProps.getInstance();
+        refreshProps();
+    }
+
+    /**
+     * Re-reads the cached config only when the props instance has actually been
+     * replaced. This runs once per output line, so it must stay a reference
+     * compare -- copying every field per line was measurable overhead on a tail.
+     */
+    private void refreshProps()
+    {
+        // bail out fast when the props instance has not changed
+        final CtrailProps props = CtrailProps.getInstance();
+        if (props == _props)
+        {
+            return;
+        }
+
+        // config was swapped (e.g. reload) -- refresh every cached field
+        _props = props;
         _keysToColors = _props.getKeysToColors();
         _keysToFileColors = _props.getKeysToFileColors();
         _keys = _props.getKeys();
         _keysSz = _keys.size();
-        _defFgColor = _props.getDefaultFgColor();
+        _defFgColor = _props.getDefaultFgColor() == null ? ConsoleColors.WHITE : _props.getDefaultFgColor();
         _firstWordMatch = _props.isMatchFirstWord();
         _caseSensitive = _props.isLineSearchCaseSensitiveMatching();
+
+        //
+        // getKeys() is a LinkedList, so get(i) in the per-line scan is O(n).
+        // copy to an array once so formatting stays linear in key count
+        //
+        _keyArray = _keys.toArray(new String[0]);
     }
 
     public String format(final LogLine line_)
@@ -65,17 +92,21 @@ public class LineFormatter
             return "";
         }
 
-        // local variables for thread safety
+        // pick up a swapped config, then use locals so format() stays thread-safe
+        refreshProps();
         String logClr = null;
         String fileClr = null;
 
-        // normalize line for keyword matching
-        final String searchLine = _caseSensitive ? line_.getLine() : line_.getLine().toLowerCase();
+        //
+        // keys are lower-cased with Locale.ROOT at load time; match that here so
+        // a Turkish-locale JVM does not fold "I" differently
+        //
+        final String searchLine = _caseSensitive ? line_.getLine() : line_.getLine().toLowerCase(Locale.ROOT);
 
-        // find matching color keyword
+        // find matching color keyword against the cached key array
         for (int i = 0; i < _keysSz; i++)
         {
-            final String key = _keys.get(i);
+            final String key = _keyArray[i];
             if (searchLine.contains(key))
             {
                 logClr = _keysToColors.get(key);

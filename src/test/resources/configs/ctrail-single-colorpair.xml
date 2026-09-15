@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- regression fixture: commons-configuration returns a bare String rather than
+     a Collection when exactly one colorpair is present -->
+<ctrail>
+
+  <inputFiles>
+    <maxInputFileCount>1000</maxInputFileCount>
+  </inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>100000</maxPendingLines>
+    <prependFilenameToLine>true</prependFilenameToLine>
+    <skipAheadInBytes>0</skipAheadInBytes>
+    <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>true</matchFirstWord>
+  </execution>
+
+  <coloring>
+    <filename>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
+    </filename>
+
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+
+      <colorpair>
+        <keyword>(ERR)</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+    </linecolors>
+  </coloring>
+
+</ctrail>
