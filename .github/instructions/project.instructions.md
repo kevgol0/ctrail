@@ -26,7 +26,7 @@ Spring, no database, no cloud infrastructure.
 | Entry point | `com.kagr.tools.ctrail.CtrailEntryPoint` |
 | Artifact | `target/ctrail-<version>.jar` |
 | Repo | single git repo, remote `git@github.com-kevgol0:kevgol0/ctrail.git` |
-| Default branch | **`master`** (there is no `main`) |
+| Default branch | **`main`** (renamed from `master` on 2026-09-15) |
 
 ### Dependencies
 
@@ -135,6 +135,25 @@ perform the task, and state which tier you used and why you dropped down.
 - After any non-trivial file write, **verify against disk** (e.g. `wc -l`,
   `grep -c '^$'`) rather than trusting the tool's echoed result.
 
+### ⚠️ macOS toolchain breakages (seen 2026-09-15 after an OS/Xcode update)
+
+Both of these break git without touching the repo, and both have workarounds:
+
+- **`git` refuses to run:** `You have not agreed to the Xcode license agreements`.
+  `/usr/bin/git` is gated when `xcode-select -p` points at `/Applications/Xcode.app`.
+  Fix with `sudo xcodebuild -license accept` or
+  `sudo xcode-select --switch /Library/Developer/CommandLineTools`.
+  Workaround without sudo: call `/Library/Developer/CommandLineTools/usr/bin/git` directly.
+- **SSH push fails:** `signing failed ... communication with agent failed` /
+  `Permission denied (publickey)`, and `ssh-add -l` reports "The agent has no identities"
+  (the keychain is also empty, so `ssh-add --apple-load-keychain` does not help).
+  Workaround — bypass the agent and use the key file directly:
+  ```bash
+  GIT_SSH_COMMAND="ssh -o IdentityAgent=none -o IdentitiesOnly=yes -i ~/.ssh/id_rsa_kevgol0" \
+    git push origin main
+  ```
+  Permanent fix: `ssh-add ~/.ssh/id_rsa_kevgol0` (re-adds the key to the agent).
+
 ---
 
 ## Plan first (non-negotiable)
@@ -173,7 +192,9 @@ release.
 - **Single repository.** There are no nested sub-repos, no multi-repo PR script, and no
   enterprise GitHub host. Ignore any instruction referencing `create-prs.sh`,
   `verame.ghe.com`, or a parent repo with nested modules — none of that applies here.
-- The default branch is **`master`**. If work starts on `master`, cut an appropriately
+- The default branch is **`main`** (renamed from `master` on 2026-09-15; older plans and
+  modifications logs in `docs/` still say `master` — that is historical record, leave it).
+  If work starts on `main`, cut an appropriately
   named branch; if already on a branch, keep working there.
 - Commit and cut PRs **only when asked**.
 - ⚠️ **`gh` is not ready for this repo out of the box.** `gh auth status` shows it
