@@ -42,6 +42,7 @@ public class LineFormatter
     private String[] _keyArray;
     private int _keysSz;
     private String _defFgColor;
+    private String _noticeColor;
     private boolean _firstWordMatch;
     private boolean _caseSensitive;
 
@@ -71,6 +72,7 @@ public class LineFormatter
         _keys = _props.getKeys();
         _keysSz = _keys.size();
         _defFgColor = _props.getDefaultFgColor() == null ? ConsoleColors.WHITE : _props.getDefaultFgColor();
+        _noticeColor = _props.getNoticeColor() == null ? ConsoleColors.CYAN : _props.getNoticeColor();
         _firstWordMatch = _props.isMatchFirstWord();
         _caseSensitive = _props.isLineSearchCaseSensitiveMatching();
 
@@ -94,6 +96,17 @@ public class LineFormatter
 
         // pick up a swapped config, then use locals so format() stays thread-safe
         refreshProps();
+
+        //
+        // ctrail's own liveness messages are not tailed content: they carry no
+        // filename prefix and must not pick up keyword coloring, or a notice
+        // mentioning "error" would come out red
+        //
+        if (line_.isNotice())
+        {
+            return _noticeColor + line_.getLine() + _reset;
+        }
+
         String logClr = null;
         String fileClr = null;
 

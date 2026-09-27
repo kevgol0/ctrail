@@ -216,6 +216,14 @@ public class FileReaderThread implements Runnable
 				continue;
 			}
 
+			//
+			// record movement BEFORE the line is queued, so that a "resumed"
+			// notice lands ahead of the data that ended the silence. Only lines
+			// that survive matching and filtering count - output you cannot see
+			// is not movement
+			//
+			IdleMonitorThread.noteActivity(tracker_.getActivityState(), _output);
+
 			if (_props.isPrependFilenameToLine())
 			{
 				_output.put(new LogLine(tracker_.getFileName(), line, tracker_.getFileSearchFilter()));

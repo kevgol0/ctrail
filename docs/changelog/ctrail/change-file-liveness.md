@@ -1,0 +1,121 @@
+# Feature: File Liveness Signals
+
+**Added:** 2026-09-27 — `feat/liveness-tail-n-idle-notice`
+
+## Summary
+
+ctrail can now tell you whether the thing it is watching is actually moving. Previously an idle
+file and a broken tail looked identical: a blank screen.
+
+Three signals, at three moments, for both files and stdin:
+
+1. **On open** — a banner naming the source, its size and how long ago it changed.
+2. **On open** — the last N lines, using a real line-accurate `tail -n` instead of a byte offset.
+3. **While quiet** — `no movement in 30s`, repeating, and `resumed after …` when data returns.
+
+## ⚠️ Behaviour change on upgrade
+
+`tailLastLines` defaults to `10`. An install that never touched `skipAheadInBytes` switches from
+"the last ~1000 bytes" to "the last 10 lines". This is the intended improvement — a byte offset
+almost always opens mid-line — but it *is* a change. Set `<tailLastLines>0</tailLastLines>` to
+keep the old behaviour exactly.
+
+## Configuration
+
+```xml
+<execution>
+  <!-- lines of history shown when a file is opened, like `tail -n N`;
+       0 disables and falls back to skipAheadInBytes -->
+  <tailLastLines>10</tailLastLines>
+
+  <!-- one banner line per input at startup: size and last-modified age -->
+  <showStartupBanner>true</showStartupBanner>
+
+  <!-- seconds of silence before "no movement in ..."; repeats at this
+       interval, and pairs with "resumed after ...". 0 disables -->
+  <idleNoticeSeconds>30</idleNoticeSeconds>
+</execution>
+
+<coloring>
+  <!-- ctrail's own messages; never picks up keyword coloring -->
+  <noticeColor>cyan</noticeColor>
+</coloring>
+```
+
+New CLI flag: `-n, --lines N` — overrides `tailLastLines`. `-e/--entirefile` now zeroes tail-N as
+well as the byte skip.
+
+## What it looks like
+
+```
+ctrail: watching ctr-smoke.log - 391 bytes, modified 7h 14m ago
+ctr-smoke.log:line 46
+ctr-smoke.log:line 47
+ctr-smoke.log:line 48
+ctr-smoke.log:line 49
+ctr-smoke.log:line 50
+ctrail: ctr-smoke.log - no movement in 2s
+ctrail: ctr-smoke.log - no movement in 4s
+ctrail: ctr-smoke.log - resumed after 5s
+ctr-smoke.log:line 51 with an error in it
+```
+
+Stdin gets everything except tail-N, which a pipe cannot support:
+
+```
+ctrail: watching stdin
+stdin:first
+ctrail: stdin - no movement in 2s
+ctrail: stdin - no movement in 4s
+ctrail: stdin - resumed after 5s
+stdin:second
+```
+
+## Implementation notes
+
+**One state machine.** `IdleMonitorThread` holds the only copy of the idle → notice → repeat →
+resume logic; `FileTailTracker` and `StdinReaderThread` each expose an `ActivityState` for it to
+watch. Inlining the checks per reader would have meant two copies that drift apart.
+
+```java
+// the elapsed figure is measured from the last line seen, not the last notice,
+// so a repeat reads "1m 00s" rather than "30s" all over again
+source_.setIdle(true);
+source_.setIdleNoticeDueMillis(now_ + source_.getIdleIntervalMillis());
+emitNotice(_output, source_.getName() + " - no movement in "
+        + DurationFormatter.format(now_ - source_.getLastActivityMillis()));
+```
+
+**Tail-N seeks rather than pre-reading.** `FileTailTracker.seekToLastNLines` scans backwards in
+8 KB chunks for the Nth-from-last newline and positions the pointer there; the existing reader
+loop then emits that history through the normal path, picking up coloring, `-m` matching, file
+filters and the filename prefix with no duplicated logic.
+
+**Movement means an emitted line.** A line dropped by a filter is not movement you can see, so a
+filter that drops everything still lets the source go idle.
+
+**Notices never take down a thread.** They use `offer` on the bounded output queue, not `add`,
+which throws when full — on the watchdog that would silently kill the one thread whose job is
+reporting that nothing is happening.
+
+## Test results
+
+```
+Tests run: 60, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+60 tests (21 before), stable across 3 consecutive `mvn clean test` runs. Every new production
+line was verified by deleting it and watching a test go red — **18/18 mutations detected**.
+
+Smoke-tested against the packaged jar: file mode (banner, tail-N, idle, repeat, resume, re-idle),
+stdin mode (banner, idle, resume), `-n 12`, `-n 0`, `-n abc`, `-e`, and an all-features-off
+config confirming the original byte-skip behaviour is untouched.
+
+## Known pre-existing bugs (not introduced, not fixed here)
+
+- **The last line is dropped at shutdown.** `OutputWriterThread` drains `size() - 1`. Reproduced
+  on the master jar 5 runs out of 5. Most visible on stdin, where EOF shuts down immediately.
+- **A config with exactly one `<colorpair>` gets no colors.** `initColoring` casts a bare
+  `String` to `Collection` and swallows the failure; `extractCount` already handles this
+  correctly for filters but is not used there.
