@@ -5,7 +5,7 @@
 **Branch:** `feat/liveness-tail-n-idle-notice` (cut from `master` @ `d43630d`)
 **Jira:** _n/a — personal tool repo, no Jira project_
 **Confluence:** _not published — personal tool repo, no team space_
-**Supersedes:** [plan-tail-n-and-idle-notification-20260923-082716.md](plan-tail-n-and-idle-notification-20260923-082716.md) (`[DRAFT]`, never approved). Delete on approval?
+**Supersedes:** `plan-tail-n-and-idle-notification-20260923-082716.md` (`[DRAFT]`, never approved) — deleted 2026-09-27 at the user's request.
 
 ---
 
