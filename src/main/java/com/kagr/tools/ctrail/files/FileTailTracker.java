@@ -47,8 +47,6 @@ public class FileTailTracker
 
 	@Getter FileSearchFilter _fileSearchFilter;
 
-	@Getter @Setter private boolean _defLineExclude;
-
 	@Getter private final ActivityState _activityState;
 
 	/** backwards scan granularity when locating the Nth-from-last line */
@@ -65,12 +63,6 @@ public class FileTailTracker
 		{
 			_fileName = file_.toString();
 		}
-
-
-		//
-		// no reason to call the filter if this is false, 
-		//
-		setDefLineExclude(!CtrailProps.getInstance().isFileFilterDefaultsToInclude());
 
 
 		setFile(file_);
@@ -247,9 +239,13 @@ public class FileTailTracker
 
 
 		//
-		// no filter set — use the configured default
+		// no filter on this source, so there is nothing to exclude against.
+		// fileFilterDefaultsToInclude is the verdict for a line that matched
+		// neither list WITHIN a filter, and FileSearchFilter already applies it.
+		// Applying it a second time here hid every line of any file that matched
+		// no <filefilter> - which, with the shipped config, is most files
 		//
-		return _defLineExclude;
+		return false;
 	}
 
 
