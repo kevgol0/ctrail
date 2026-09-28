@@ -193,9 +193,30 @@ public class CtrailEntryPoint implements IShutdownManager
 					break;
 				}
 
-				final FileTailTracker ftracker = new FileTailTracker(filename, new RandomAccessFile(file, "r"));
-				findAndSetFileTracker(fstMap, filename, ftracker);
-				deq.add(ftracker);
+				//
+				// the tracker owns the handle once constructed; until it is safely
+				// on the deque a throw would orphan it with no reference to close
+				//
+				final RandomAccessFile raf = new RandomAccessFile(file, "r");
+				FileTailTracker ftracker = null;
+				try
+				{
+					ftracker = new FileTailTracker(filename, raf);
+					findAndSetFileTracker(fstMap, filename, ftracker);
+					deq.add(ftracker);
+				}
+				catch (final Exception ex_)
+				{
+					if (ftracker != null)
+					{
+						ftracker.close();
+					}
+					else
+					{
+						raf.close();
+					}
+					throw ex_;
+				}
 
 
 				//
@@ -572,6 +593,21 @@ public class CtrailEntryPoint implements IShutdownManager
 			_logger.trace("interrupting reader");
 			_reader.interrupt();
 			_reader = null;
+		}
+
+
+		//
+		// release the file handles. Nothing closed these before, so a multi-file
+		// tail held every descriptor until the JVM exited and this cleanup path
+		// omitted them entirely
+		//
+		if (_fileTrackers != null)
+		{
+			final Iterator<FileTailTracker> trackers = _fileTrackers.iterator();
+			while (trackers.hasNext())
+			{
+				trackers.next().close();
+			}
 		}
 
 
