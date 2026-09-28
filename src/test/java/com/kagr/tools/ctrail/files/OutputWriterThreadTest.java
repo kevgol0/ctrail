@@ -19,6 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -45,6 +46,7 @@ public class OutputWriterThreadTest
 {
 	private BlockingDeque<LogLine>	_output;
 	private ByteArrayOutputStream	_bytes;
+	private BufferedOutputStream	_buffered;
 	private PrintStream				_sout;
 
 
@@ -60,16 +62,26 @@ public class OutputWriterThreadTest
 
 		_output = new LinkedBlockingDeque<>();
 		_bytes = new ByteArrayOutputStream();
-		_sout = new PrintStream(_bytes, true, StandardCharsets.UTF_8.name());
+		//
+		// the sink must genuinely hold bytes back, or the flush cannot be tested.
+		// PrintStream pushes through to a bare ByteArrayOutputStream on every
+		// println regardless of autoflush, so a BufferedOutputStream sits between
+		// them: bytes reach _bytes only when something actually flushes
+		//
+		_buffered = new BufferedOutputStream(_bytes, 8192);
+		_sout = new PrintStream(_buffered, false, StandardCharsets.UTF_8.name());
 	}
 
 
 
 
 
+	/**
+	 * Reads the captured bytes WITHOUT flushing, so only the writer's own
+	 * flush() can make them visible.
+	 */
 	private String written()
 	{
-		_sout.flush();
 		return new String(_bytes.toByteArray(), StandardCharsets.UTF_8);
 	}
 
@@ -163,6 +175,32 @@ public class OutputWriterThreadTest
 		final String out = written();
 		assertTrue(out.indexOf("aaa-first") < out.indexOf("bbb-second"));
 		assertTrue(out.indexOf("bbb-second") < out.indexOf("ccc-third"));
+	}
+
+
+
+
+
+	/**
+	 * The drained backlog must reach a non-auto-flushing destination. This is the
+	 * `ctr file | less` / `ctr file > out.txt` case: without the flush on exit the
+	 * bytes sit in the PrintStream buffer and are never seen.
+	 */
+	@Test
+	public void testDrainIsFlushedToANonAutoFlushingStream()
+	{
+		final OutputWriterThread writer = new OutputWriterThread(_output, _sout);
+		writer.setShouldContinue(false, false);
+
+		_output.add(new LogLine(null, "buffered-line", null));
+		writer.run();
+
+		//
+		// nothing here flushes: _sout was built with autoflush off and written()
+		// does not flush, so a visible byte proves the writer flushed on exit
+		//
+		assertTrue("drained output must be flushed, not left in the buffer",
+				written().contains("buffered-line"));
 	}
 
 
