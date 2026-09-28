@@ -43,8 +43,21 @@ import com.kagr.tools.ctrail.unit.LogLine;
 
 public class StdinReaderThreadIdleTest
 {
-	/** an epoch-1970 marker, so any real activity timestamp is unmistakably newer */
-	private static final long _marker = 1000L;
+	/**
+	 * The activity clock is millisecond-resolution wall time, so a short sleep
+	 * makes "did it move?" unambiguous without needing a setter on ActivityState.
+	 */
+	private static void sleepABit()
+	{
+		try
+		{
+			Thread.sleep(5);
+		}
+		catch (final InterruptedException ex_)
+		{
+			Thread.currentThread().interrupt();
+		}
+	}
 
 	private BlockingDeque<LogLine> _out;
 	private IShutdownManager _noopShutdown;
@@ -79,12 +92,13 @@ public class StdinReaderThreadIdleTest
 	{
 		final StdinReaderThread reader = readerFor("keep me\n", "keep");
 		final ActivityState state = reader.getActivityState();
-		state.setLastActivityMillis(_marker);
+		final long before = state.getLastActivityMillis();
+		sleepABit();
 
 		reader.run();
 
 		assertEquals(1, _out.size());
-		assertTrue("an emitted line must refresh the activity clock", state.getLastActivityMillis() > _marker);
+		assertTrue("an emitted line must refresh the activity clock", state.getLastActivityMillis() > before);
 	}
 
 
@@ -100,12 +114,13 @@ public class StdinReaderThreadIdleTest
 		//
 		final StdinReaderThread reader = readerFor("drop this\nand this too\n", "keep");
 		final ActivityState state = reader.getActivityState();
-		state.setLastActivityMillis(_marker);
+		final long before = state.getLastActivityMillis();
+		sleepABit();
 
 		reader.run();
 
 		assertTrue(_out.isEmpty());
-		assertEquals(_marker, state.getLastActivityMillis());
+		assertEquals("a dropped line must not refresh the activity clock", before, state.getLastActivityMillis());
 	}
 
 
@@ -117,12 +132,13 @@ public class StdinReaderThreadIdleTest
 	{
 		final StdinReaderThread reader = readerFor("one\ntwo\n", null);
 		final ActivityState state = reader.getActivityState();
-		state.setLastActivityMillis(_marker);
+		final long before = state.getLastActivityMillis();
+		sleepABit();
 
 		reader.run();
 
 		assertEquals(2, _out.size());
-		assertTrue(state.getLastActivityMillis() > _marker);
+		assertTrue(state.getLastActivityMillis() > before);
 	}
 
 
@@ -170,12 +186,13 @@ public class StdinReaderThreadIdleTest
 
 		final StdinReaderThread reader = filteredReaderFor("keep me\n", filter);
 		final ActivityState state = reader.getActivityState();
-		state.setLastActivityMillis(_marker);
+		final long before = state.getLastActivityMillis();
+		sleepABit();
 
 		reader.run();
 
 		assertEquals(1, _out.size());
-		assertTrue(state.getLastActivityMillis() > _marker);
+		assertTrue(state.getLastActivityMillis() > before);
 	}
 
 
@@ -190,12 +207,13 @@ public class StdinReaderThreadIdleTest
 
 		final StdinReaderThread reader = filteredReaderFor("nothing of interest\n", filter);
 		final ActivityState state = reader.getActivityState();
-		state.setLastActivityMillis(_marker);
+		final long before = state.getLastActivityMillis();
+		sleepABit();
 
 		reader.run();
 
 		assertTrue(_out.isEmpty());
-		assertEquals(_marker, state.getLastActivityMillis());
+		assertEquals("a dropped line must not refresh the activity clock", before, state.getLastActivityMillis());
 	}
 
 
