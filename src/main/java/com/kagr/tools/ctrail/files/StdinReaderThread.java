@@ -138,7 +138,11 @@ public class StdinReaderThread implements Runnable
 				? CtrailProps.STDIN_FILTER_NAME
 				: null;
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream)))
+		//
+		// explicit charset: the default constructor takes the platform default, so
+		// `cat f | ctr` and `ctr f` could render identical bytes differently
+		//
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream, CtrailProps.getInstance().getCharset())))
 		{
 			String line;
 			while ((line = reader.readLine()) != null)

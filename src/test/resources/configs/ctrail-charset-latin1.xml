@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ctrail>
+  <!-- proves the charset is configurable and that latin-1 remains reachable -->
+  <inputFiles><maxInputFileCount>100</maxInputFileCount></inputFiles>
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines><maxPendingLines>100000</maxPendingLines>
+    <prependFilenameToLine>false</prependFilenameToLine>
+    <skipAheadInBytes>0</skipAheadInBytes><tailLastLines>0</tailLastLines>
+    <showStartupBanner>false</showStartupBanner><idleNoticeSeconds>0</idleNoticeSeconds>
+    <noChangeSleepTimeMillis>10</noChangeSleepTimeMillis>
+    <matchFirstWord>false</matchFirstWord><useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <charset>ISO-8859-1</charset>
+  </execution>
+  <coloring>
+    <filename><blankLineOnFileChange>false</blankLineOnFileChange></filename>
+    <linecolors><defaultFgColor>white</defaultFgColor>
+      <colorpair><keyword>error</keyword><fgcolor>red</fgcolor></colorpair>
+      <colorpair><keyword>warn</keyword><fgcolor>yellow</fgcolor></colorpair>
+    </linecolors>
+  </coloring>
+</ctrail>
