@@ -14,6 +14,12 @@ package com.kagr.tools.ctrail.unit;
 
 
 
+import java.util.Locale;
+
+
+
+
+
 public final class DurationFormatter
 {
     private static final long _millisPerSecond = 1000L;
@@ -37,6 +43,9 @@ public final class DurationFormatter
     /**
      * Renders an elapsed duration as a short age string: {@code 45s}, {@code 4m 12s},
      * {@code 2h 09m} or {@code 3d 04h}. Values at or below zero render as {@code 0s}.
+     *
+     * Always renders ASCII digits: the default locale is not consulted, so a JVM
+     * defaulting to Devanagari or Arabic-Indic numerals still produces "4m 12s".
      *
      * @param millis_ the elapsed time in milliseconds
      * @return the formatted age, never null
@@ -66,14 +75,14 @@ public final class DurationFormatter
 
         if (totalMinutes < _minutesPerHour)
         {
-            return String.format("%dm %02ds", totalMinutes, totalSeconds % _secondsPerMinute);
+            return String.format(Locale.ROOT, "%dm %02ds", totalMinutes, totalSeconds % _secondsPerMinute);
         }
 
         if (totalHours < _hoursPerDay)
         {
-            return String.format("%dh %02dm", totalHours, totalMinutes % _minutesPerHour);
+            return String.format(Locale.ROOT, "%dh %02dm", totalHours, totalMinutes % _minutesPerHour);
         }
 
-        return String.format("%dd %02dh", totalDays, totalHours % _hoursPerDay);
+        return String.format(Locale.ROOT, "%dd %02dh", totalDays, totalHours % _hoursPerDay);
     }
 }
