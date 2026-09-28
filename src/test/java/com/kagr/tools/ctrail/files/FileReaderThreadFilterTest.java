@@ -79,7 +79,63 @@ public class FileReaderThreadFilterTest
 		props.setPrependFilenameToLine(false);
 		props.setBlankLineOnFileChange(false);
 
+		//
+		// CtrailProps is a singleton, so a test that flips this would otherwise
+		// leak into whichever test runs next. Pin it here; the two tests that
+		// need it false set it themselves
+		//
+		props.setFileFilterDefaultsToInclude(true);
+
 		_output = new LinkedBlockingDeque<>();
+	}
+
+
+	/**
+	 * With fileFilterDefaultsToInclude=false - which is what the shipped
+	 * etc/ctrail.xml uses - a file matching no &lt;filefilter&gt; used to emit
+	 * nothing at all: the startup banner and then silence. That setting is the
+	 * verdict for a line matching neither list WITHIN a filter; it must not
+	 * decide anything for a source that has no filter.
+	 */
+	@Test
+	public void unmatchedFileEmitsEveryLineEvenWhenDefaultsToExclude() throws Exception
+	{
+		CtrailProps.getInstance().setFileFilterDefaultsToInclude(false);
+
+		final File f = writeTempLog("one\ntwo\nthree\n");
+		final FileTailTracker tracker = trackerFor(f, null);
+		runReaderBriefly(tracker, null);
+
+		final List<String> lines = drain();
+		assertEquals("a file with no matching filter must show every line", 3, lines.size());
+		assertEquals("one", lines.get(0));
+		assertEquals("three", lines.get(2));
+	}
+
+
+
+
+
+	/**
+	 * The other half of the same setting: a file that DOES have a filter keeps
+	 * strict allow-list behaviour, so the fix above cannot be weakening filtering.
+	 */
+	@Test
+	public void matchedFileStillHonorsStrictAllowList() throws Exception
+	{
+		CtrailProps.getInstance().setFileFilterDefaultsToInclude(false);
+
+		final FileSearchFilter filter = new FileSearchFilter("ctrail-reader.*\\.log", false);
+		filter.getIncludeTerms().add("keep");
+
+		final File f = writeTempLog("keep alpha\ndrop bravo\nkeep charlie\n");
+		final FileTailTracker tracker = trackerFor(f, filter);
+		runReaderBriefly(tracker, null);
+
+		final List<String> lines = drain();
+		assertEquals("a filtered file must stay a strict allow-list", 2, lines.size());
+		assertEquals("keep alpha", lines.get(0));
+		assertEquals("keep charlie", lines.get(1));
 	}
 
 
