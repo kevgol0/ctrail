@@ -139,7 +139,15 @@ public class FileReaderThreadIdleTest
 	public void resumeNoticeLandsAheadOfTheLineThatEndedTheSilence() throws Exception
 	{
 		final FileTailTracker tracker = trackerOn("l1\nl2\nl3\nl4\nl5\n");
-		tracker.getActivityState().setIdle(true);
+
+		//
+		// drive the source idle the way the monitor does, rather than poking a
+		// setter - the notice it emits is discarded, only the state matters here
+		//
+		final java.util.Deque<LogLine> scratch = new LinkedBlockingDeque<>();
+		tracker.getActivityState().checkForIdle(scratch, System.currentTimeMillis() + 60_000L);
+		assertTrue("fixture must actually be idle", tracker.getActivityState().isIdle());
+
 		_trackers.add(tracker);
 		startReader();
 

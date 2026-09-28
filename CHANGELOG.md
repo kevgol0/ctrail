@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.2.2
+
+### Fixed
+
+* **Idle notices could contradict the line that had just arrived.** The monitor thread and a reader
+  thread performed check-then-act across four volatile fields on the same source; `volatile` gives
+  visibility, not atomicity. The monitor could pass its "is it due?" test, be descheduled while the
+  reader recorded a line, then resume and announce `no movement in 0s` right after that line — and
+  leave the source marked idle, so the next line printed a bogus `resumed after 0s`.
+
+  The transitions now live on `ActivityState` as `synchronized` instance methods and the public
+  setters are gone, so check-and-act is atomic and nothing outside can desynchronise the state.
+  (CTRAIL-4)
+
+* **A resume notice dropped by a full queue was never retried.** `_idle` was cleared *before* the
+  notice was queued, so when `offer()` failed the state claimed the source had resumed while the
+  user was never told — leaving `no movement in 30s` on screen with no matching `resumed after`.
+  The queue is full precisely when a burst has ended the silence, which is exactly when that notice
+  matters. `_idle` is now cleared only once the notice is actually queued, so it is retried on the
+  next line. (CTRAIL-10)
+
+### Internal
+
+* The idle-notice reschedule was not covered: deleting it left every test in the class green,
+  because the stale due time was also in the past so the next check fired anyway. Without it the
+  monitor would re-notify every 250ms forever. The cadence itself is now pinned. (CTRAIL-17)
+
+* `ActivityState` gained a structural test asserting that no public setter can bypass the
+  synchronized transitions. CTRAIL-4 is a race, so no deterministic single-threaded test can catch
+  a missing `synchronized` directly; this pins the property that prevents it instead.
+
 ## 1.2.1
 
 ### Fixed
