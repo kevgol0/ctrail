@@ -20,7 +20,7 @@ Spring, no database, no cloud infrastructure.
 | Fact | Value |
 |---|---|
 | Group / artifact | `com.kagr.tools` / `ctrail` |
-| Current version | `1.1.1` |
+| Current version | `1.2.1` |
 | Java | 8 (`maven-compiler-plugin` source/target `1.8`) |
 | Build | Maven; `maven-shade-plugin` produces an executable fat jar |
 | Entry point | `com.kagr.tools.ctrail.CtrailEntryPoint` |
@@ -204,6 +204,15 @@ release.
   confirm with `gh auth status`. Do not assume a `gh` command targets the right host.
 - Plain `git push`/`pull` work independently of `gh`, via the `github.com-kevgol0` SSH host
   alias in `~/.ssh/config`.
+- ⚠️ **Every update ships with a version bump.** No change reaches `main` at the same version as
+  the release before it. Bump `pom.xml` and add the matching `CHANGELOG.md` section in the same
+  change, not afterwards:
+  - **patch** (`1.2.0` → `1.2.1`) — bug fixes, docs, test-only work
+  - **minor** (`1.2.x` → `1.3.0`) — new config keys, new flags, new behaviour that is additive
+  - **major** — a breaking change to config or CLI
+  `bin/install.sh` reads the version from `pom.xml`, so that file is the single source of truth;
+  the version strings in `README.md` and the `install.sh` usage line are examples and should be
+  refreshed alongside it.
 - Do not commit IDE artifacts — `*.iml` and `.idea` are gitignored; keep it that way.
 - Releases publish the shaded jar, `ctrail.xml` and `ctr` to GitHub Releases, which is
   where `bin/install.sh` downloads from.

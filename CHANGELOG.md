@@ -1,5 +1,72 @@
 # Changelog
 
+## 1.2.1
+
+### Fixed
+
+* **`-e/--entirefile` was silently overridden by `-n/--lines`.** `-e` was applied before `-n`, so
+  `-n` overwrote the `setTailLastLines(0)` it had just performed and `ctr -e -n 50` showed 50 lines
+  where the README promises the whole file. Argument order made no difference. `-e` is now applied
+  last and wins. (CTRAIL-6)
+
+* **`ctr -n <value above Integer.MAX_VALUE>` crashed on startup.** The guard used
+  `StringUtils.isNumeric`, which tests digit-ness, then parsed with `Integer.parseInt`, which tests
+  range; the resulting `NumberFormatException` escaped `catch (ParseException)` and killed the run.
+  The parse is now the guard. Negative values are rejected too, since a negative count would
+  otherwise be read as "disabled". (CTRAIL-7)
+
+* **Elapsed times rendered in locale-specific digits.** `DurationFormatter` called `String.format`
+  with no `Locale`, so the startup banner and idle notices printed `४m १२s` on a Devanagari-default
+  JVM — and `DurationFormatterTest`, which asserts the ASCII forms, failed outright there. All
+  three calls now pass `Locale.ROOT`. (CTRAIL-12)
+
+### Documentation
+
+* **Filters are allow-list *or* deny-list, not both.** `fileFilterDefaultsToInclude` also decides
+  for a `<filefilter>` that declares no `<includes>`, so an excludes-only filter emits nothing under
+  the shipped `false` default. That is deliberate; the supported way to write a deny-list is to set
+  the flag `true` and use `<excludes>` alone. The flag is global, so one config cannot mix the two
+  styles. Reported as CTRAIL-2 and closed as working-as-designed, with tests pinning all four cases.
+
+### Internal
+
+* `OutputWriterThread`'s exit `flush()` was untested — the harness used an auto-flushing
+  `PrintStream` and flushed again before reading, i.e. exactly the case the flush does not apply to.
+  Deleting the production line left every test green; it now fails 5 of 6. (CTRAIL-18)
+
+## 1.2.0
+
+### Added
+
+* **File liveness signals.** ctrail can now tell you whether what it is watching is actually moving,
+  for files and stdin alike:
+  * `execution.tailLast` history on open — line-accurate, replacing the byte offset that almost
+    always opened mid-line
+  * `execution.showStartupBanner` — one line per input giving size and last-modified age
+  * `execution.idleNoticeSeconds` — `no movement in 30s`, repeating, paired with `resumed after ...`
+  * `coloring.noticeColor` — ctrail's own messages, immune to keyword colouring
+  * new `-n/--lines N` flag mirroring `tail -n`; `-e` zeroes tail-N as well as the byte skip
+
+  ⚠️ **Behaviour change:** an install that never set `skipAheadInBytes` goes from "the last ~1000
+  bytes" to "the last 10 lines" on open.
+
+### Security
+
+* Dependency sweep clearing all 8 Dependabot alerts — the CRITICAL and all three HIGHs:
+  `commons-configuration2` 2.7 → 2.15.0, `commons-io` 2.7 → 2.20.0, `commons-lang3` 3.12.0 → 3.20.0,
+  `logback-classic` 1.2.3 → 1.2.13, `commons-beanutils` 1.9.4 → 1.11.0.
+
+  The last alert needed `commons-configuration2` 2.15.0, which initially failed with
+  `NoSuchMethodError` — not its fault. `IOSupplier.getUnchecked()` arrived in commons-io **2.17.0**
+  and our own explicit pin was holding commons-io at 2.14.0, below the floor. `dependency:tree` does
+  not show optional dependencies, which is why the requirement was invisible.
+
+### Fixed
+
+* **A file matching no `<filefilter>` showed nothing.** `fileFilterDefaultsToInclude=false` — the
+  shipped value — made `FileTailTracker` exclude every line of a source with no filter attached.
+  Pointing ctrail at a log is its primary use, so a default install produced an empty screen.
+
 ## Unreleased
 
 ### Added
