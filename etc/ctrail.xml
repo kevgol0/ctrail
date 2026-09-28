@@ -43,6 +43,12 @@
             matching order) for your line matching -->
         <matchFirstWord>false</matchFirstWord>
 
+        <!-- charset used to decode input, for both files and piped stdin.
+            Any JVM charset name; an unusable one falls back to UTF-8 with a
+            warning. Before 1.3.0 input was always decoded as ISO-8859-1, so
+            set that here if you depend on the old behaviour -->
+        <charset>UTF-8</charset>
+
         <!-- case sensitivity -->
         <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
     </execution>

@@ -139,6 +139,7 @@ matching `<filefilter>`, and piped input when no `<stdinfilter>` is declared.
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
     <matchFirstWord>false</matchFirstWord>
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <charset>UTF-8</charset>
 
     <!-- file liveness -->
     <tailLastLines>10</tailLastLines>
@@ -174,6 +175,15 @@ matching `<filefilter>`, and piped input when no `<stdinfilter>` is declared.
   </filtering>
 </ctrail>
 ```
+
+### Character encoding
+
+`execution.charset` decodes input for **both** files and piped stdin, defaulting to `UTF-8`. Any JVM
+charset name works; an unusable one falls back to UTF-8 with a warning.
+
+⚠️ **Changed in 1.3.0.** Earlier versions always decoded as ISO-8859-1, so a UTF-8 log came out as
+`cafÃ© lattÃ©` — and a filter keyword containing a non-ASCII character silently never matched. Set
+`<charset>ISO-8859-1</charset>` to restore the old behaviour.
 
 ### Knowing whether a file is actually moving
 
@@ -356,7 +366,7 @@ See [`etc/ctrail-stdin-example.xml`](etc/ctrail-stdin-example.xml) for a ready-t
 ./bin/install.sh
 
 # or specify a version explicitly
-./bin/install.sh 1.2.3
+./bin/install.sh 1.3.0
 ```
 
 The install script downloads from [GitHub Releases](https://github.com/kevgol0/ctrail/releases) and places files at:

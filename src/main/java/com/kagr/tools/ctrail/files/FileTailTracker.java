@@ -14,7 +14,9 @@ package com.kagr.tools.ctrail.files;
 
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.RandomAccessFile;
+import java.nio.charset.Charset;
 import java.util.Deque;
 
 
@@ -53,6 +55,9 @@ public class FileTailTracker
 
 	/** backwards scan granularity when locating the Nth-from-last line */
 	private static final int _backScanChunkSize = 8192;
+
+	/** starting size for the per-line byte buffer; grows as needed */
+	private static final int _lineBufferHint = 128;
 
 
 
@@ -299,6 +304,64 @@ public class FileTailTracker
 			_logger.warn("output queue full, dropping rotation notice for:{}", _fileName);
 		}
 		return true;
+	}
+
+
+
+
+
+	/**
+	 * Reads one line and decodes it with the given charset.
+	 *
+	 * RandomAccessFile.readLine() is specified to discard the high 8 bits of each
+	 * byte - it is Latin-1 and cannot be configured - so UTF-8 content came out as
+	 * mojibake and a non-ASCII filter keyword could never match. This reads the
+	 * raw bytes and decodes them properly.
+	 *
+	 * Terminators match readLine(): \r, \n and \r\n, and the pointer is left
+	 * after the terminator so the seek arithmetic is unchanged.
+	 *
+	 * @param charset_ the charset to decode with
+	 * @return the line without its terminator, or null at end of file
+	 * @throws IOException if the file cannot be read
+	 */
+	public final String readLine(@NonNull final Charset charset_) throws IOException
+	{
+		final ByteArrayOutputStream buffer = new ByteArrayOutputStream(_lineBufferHint);
+		boolean sawAnything = false;
+		int b = _file.read();
+		while (b != -1)
+		{
+			sawAnything = true;
+			if (b == '\n')
+			{
+				break;
+			}
+
+			if (b == '\r')
+			{
+				//
+				// \r\n is one terminator; a lone \r ends the line and the byte
+				// after it belongs to the next one
+				//
+				final long afterCr = _file.getFilePointer();
+				if (_file.read() != '\n')
+				{
+					_file.seek(afterCr);
+				}
+				break;
+			}
+
+			buffer.write(b);
+			b = _file.read();
+		}
+
+		if (!sawAnything)
+		{
+			return null;
+		}
+
+		return new String(buffer.toByteArray(), charset_);
 	}
 
 

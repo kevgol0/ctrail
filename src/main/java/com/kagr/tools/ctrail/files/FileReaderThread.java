@@ -207,7 +207,7 @@ public class FileReaderThread implements Runnable
 		final long eof = tracker_.getFile().length();
 		while (readPos < eof)
 		{
-			line = tracker_.getFile().readLine();
+			line = tracker_.readLine(_props.getCharset());
 			if (line == null)
 			{
 				break;

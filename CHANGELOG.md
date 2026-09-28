@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+* **`execution.charset`** — the charset used to decode input, defaulting to **UTF-8**:
+
+  ```xml
+  <execution>
+    <charset>UTF-8</charset>   <!-- any JVM charset name -->
+  </execution>
+  ```
+
+  An unusable name falls back to UTF-8 with a WARN rather than refusing to start, consistent with
+  how the rest of the config degrades.
+
+### Fixed
+
+* **Non-ASCII input was mangled, and non-ASCII filter keywords could never match.** (CTRAIL-14)
+
+  `RandomAccessFile.readLine()` is specified to discard the high 8 bits of every byte — it is
+  Latin-1 and cannot be configured — so a UTF-8 log rendered as mojibake. Stdin had the sibling
+  defect: `new InputStreamReader(stream)` took the **platform default**, so `cat f | ctr` and
+  `ctr f` could render identical bytes differently.
+
+  | `charset` | output |
+  |---|---|
+  | `ISO-8859-1` (what every earlier version did, unconditionally) | `cafÃ© lattÃ©` / `ã­ã° start` |
+  | `UTF-8` (the new default) | `café latté` / `ログ start` |
+
+  Worse than cosmetic: an `<includes>` or `<excludes>` keyword containing a non-ASCII character was
+  compared against mis-decoded text and silently never matched, so filtering appeared to do nothing.
+
+  `FileTailTracker.readLine(Charset)` now reads raw bytes and decodes them explicitly, keeping
+  `readLine()`'s terminator behaviour (`\r`, `\n`, `\r\n`, and a final line with no terminator)
+  and leaving the file pointer where the seek arithmetic expects it.
+
+### ⚠️ Behaviour change on upgrade
+
+Input is now decoded as **UTF-8** rather than Latin-1. For ASCII logs nothing changes. If you rely
+on the old behaviour, set `<charset>ISO-8859-1</charset>`.
+
 ## 1.2.3
 
 ### Fixed

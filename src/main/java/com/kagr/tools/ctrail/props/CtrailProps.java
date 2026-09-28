@@ -18,6 +18,8 @@ import static java.text.MessageFormat.format;
 
 
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,6 +84,9 @@ public class CtrailProps
 	@Getter @Setter private boolean _showStartupBanner = true;
 
 	@Getter @Setter private int _idleNoticeSeconds = 30;
+
+	/** charset used to decode input; UTF-8 unless the config says otherwise */
+	@Getter private Charset _charset = StandardCharsets.UTF_8;
 
 	@Getter @Setter private boolean _lineSearchCaseSensitiveMatching = false;
 
@@ -210,6 +215,7 @@ public class CtrailProps
 			setShowStartupBanner(config.getBoolean("execution.showStartupBanner", _showStartupBanner));
 			setIdleNoticeSeconds(config.getInt("execution.idleNoticeSeconds", _idleNoticeSeconds));
 			setNoticeColor(getColorCode(config.getString("coloring.noticeColor", "cyan")));
+			setCharsetFromName(config.getString("execution.charset", StandardCharsets.UTF_8.name()));
 
 			initColoring(config);
 			initFiltering(config);
@@ -218,6 +224,34 @@ public class CtrailProps
 		catch (final Exception ex_)
 		{
 			_logger.error(ex_.toString());
+		}
+	}
+
+
+
+
+
+	/**
+	 * Resolves the configured charset name, falling back to UTF-8 rather than
+	 * refusing to start - consistent with how the rest of this config degrades.
+	 *
+	 * @param name_ the charset name from the config, may be null or unusable
+	 */
+	private void setCharsetFromName(final String name_)
+	{
+		if (StringUtils.isBlank(name_))
+		{
+			return;
+		}
+
+		try
+		{
+			_charset = Charset.forName(StringUtils.trim(name_));
+		}
+		catch (final Exception ex_)
+		{
+			_logger.warn("unusable execution.charset:{} - falling back to {}", name_, StandardCharsets.UTF_8.name());
+			_charset = StandardCharsets.UTF_8;
 		}
 	}
 
