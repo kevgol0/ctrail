@@ -82,7 +82,7 @@ public class FileReaderThread implements Runnable
 	public void run()
 	{
 		long szToRead;
-		FileTailTracker tracker;
+		FileTailTracker tracker = null;
 		int nFiles = _fileTrackers.size();
 		int nEmptyItrCnt = 0;
 		final int sleepTime = _props.getNoChangeSleepTimeMillis();
@@ -104,6 +104,12 @@ public class FileReaderThread implements Runnable
 				// failure in file ptr, then this file will 
 				// not be added back into the queue...
 				//
+				//
+				// a rotated file has shrunk below the read position; reset and say
+				// so before measuring, or the tail goes permanently silent
+				//
+				tracker.handleRotation(_output);
+
 				szToRead = tracker.getRemainingSize();
 				if (szToRead > 0)
 				{
@@ -152,6 +158,23 @@ public class FileReaderThread implements Runnable
 
 				// show the error
 				_logger.error(ex_.toString());
+
+
+				//
+				// the tracker was taken off the deque and is not going back. Close
+				// its handle, mark the source finished so the idle monitor stops
+				// announcing a silence that can never end, and tell the user on
+				// stdout - the exception itself only reaches the log
+				//
+				if (tracker != null)
+				{
+					tracker.getActivityState().setFinished(true);
+					if (!_output.offer(new LogLine(null, "ctrail: " + tracker.getFileName() + " - read error, no longer watching", null, true)))
+					{
+						_logger.warn("output queue full, dropping read-error notice for:{}", tracker.getFileName());
+					}
+					tracker.close();
+				}
 
 				// am I done?
 				if (_fileTrackers.size() <= 0)

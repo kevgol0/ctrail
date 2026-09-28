@@ -356,7 +356,7 @@ See [`etc/ctrail-stdin-example.xml`](etc/ctrail-stdin-example.xml) for a ready-t
 ./bin/install.sh
 
 # or specify a version explicitly
-./bin/install.sh 1.2.2
+./bin/install.sh 1.2.3
 ```
 
 The install script downloads from [GitHub Releases](https://github.com/kevgol0/ctrail/releases) and places files at:

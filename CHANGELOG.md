@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.2.3
+
+### Fixed
+
+* **Log rotation silently stopped the tail — and the idle notice called it "no movement".** Once a
+  file was truncated the read position sat past EOF, `getRemainingSize()` stayed negative and the
+  reader never advanced again. The liveness feature then asserted that silence as fact, about a file
+  that was actively being written.
+
+  A shrunken file is now detected, the position reset, and the change announced rather than done
+  silently:
+
+  ```
+  ctrail: app.log - rotated, following new file
+  ```
+
+  ⚠️ Rename-and-create rotation is **not** covered: the open handle keeps the old inode, so
+  following that needs a reopen by path. (CTRAIL-5)
+
+* **A read error abandoned the file in silence.** The `IOException` handler dropped the tracker
+  without returning it to the queue, closing its handle, or marking the source finished — so the
+  idle monitor kept announcing a file ctrail had stopped reading, while the error itself only
+  reached the log. The handler now closes the file, marks the source finished, and prints
+  `read error, no longer watching` to stdout. (CTRAIL-9)
+
+* **`tail -n` ignored lone-CR line endings.** The backwards scan counted only `\n` while
+  `RandomAccessFile.readLine()` also breaks on `\r`, so a classic-Mac file found no breaks at all
+  and replayed whole. The scan now matches `readLine()`, treating `\r\n` as one terminator —
+  including when the pair is split across the 8 KB scan window. (CTRAIL-13)
+
+* **A tracker that could not be positioned was used anyway.** The constructor logged the
+  `IOException` and continued, leaving the file pointer and the recorded position disagreeing —
+  which either spins the reader at 100% CPU with no output or dumps the whole file as "history". It
+  now closes the handle and refuses to construct. (CTRAIL-11)
+
+* **File handles were never closed.** Nothing in `src/main` closed a `RandomAccessFile`, so a
+  multi-file tail held every descriptor until the JVM exited and `shutdown()` — explicitly the
+  cleanup path — omitted them. `FileTailTracker` gained `close()`, `shutdown()` calls it for every
+  tracker, and `getFilesFromArgs` no longer orphans a handle if construction fails. (CTRAIL-15)
+
 ## 1.2.2
 
 ### Fixed
