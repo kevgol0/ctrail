@@ -312,6 +312,29 @@ ctr --version
 | `-h` | `--help` | Print help |
 |      | `--version` | Show version |
 
+### Filters: allow-list or deny-list, not both
+
+`fileFilterDefaultsToInclude` decides the verdict for a line that matched neither list on a file
+that **has** a filter — and it decides for a `<filefilter>` that declares no `<includes>` at all.
+
+| `fileFilterDefaultsToInclude` | `<filefilter>` with `<includes>` | `<filefilter>` with only `<excludes>` |
+|---|---|---|
+| `false` (shipped default) | strict allow-list | **emits nothing** |
+| `true` | includes win, rest shown | deny-list — hides only what is excluded |
+
+So to express *"hide DEBUG, show everything else"*:
+
+```xml
+<fileFilterDefaultsToInclude>true</fileFilterDefaultsToInclude>
+<filefilter>
+  <filename>app.log</filename>
+  <excludes><keyword>DEBUG</keyword></excludes>
+</filefilter>
+```
+
+⚠️ The setting is **global**. One config cannot mix strict allow-lists and deny-lists; every filter
+in it shares the same default.
+
 ### Stdin filtering
 
 When no file arguments are given, ctrail reads from stdin and applies the `<filefilter>` whose `<filename>` is `stdin`. This lets you include/exclude lines from piped output using the same keyword filtering available for files.

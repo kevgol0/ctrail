@@ -135,6 +135,7 @@ public class FileSearchFilter
 		{
 			return false;
 		}
+
 		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
 		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
 		//
@@ -156,6 +157,13 @@ public class FileSearchFilter
 		}
 
 
+		//
+		// no include term matched. fileFilterDefaultsToInclude decides, and it
+		// decides for an empty <includes> list too: a filter with no includes and
+		// the flag false hides the file entirely. That is deliberate - see
+		// FileSearchFilterTest.testDefaultIncludeBehaviour. An excludes-only
+		// filter therefore requires fileFilterDefaultsToInclude=true
+		//
 		return _defLineInclude;
 	}
 
