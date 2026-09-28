@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ctrail>
+
+  <!-- an excludes-only <filefilter> with fileFilterDefaultsToInclude=false,
+       which is the combination the shipped etc/ctrail.xml produces and which
+       used to hide the entire file -->
+  <inputFiles><maxInputFileCount>100</maxInputFileCount></inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>100000</maxPendingLines>
+    <prependFilenameToLine>false</prependFilenameToLine>
+    <skipAheadInBytes>0</skipAheadInBytes>
+    <tailLastLines>0</tailLastLines>
+    <showStartupBanner>false</showStartupBanner>
+    <idleNoticeSeconds>0</idleNoticeSeconds>
+    <noChangeSleepTimeMillis>10</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>false</matchFirstWord>
+  </execution>
+
+  <coloring>
+    <filename><blankLineOnFileChange>false</blankLineOnFileChange></filename>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <colorpair><keyword>error</keyword><fgcolor>red</fgcolor></colorpair>
+      <colorpair><keyword>warn</keyword><fgcolor>yellow</fgcolor></colorpair>
+    </linecolors>
+  </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+    <excludesEnabled>true</excludesEnabled>
+
+    <!-- strict allow-list semantics for filters that DO declare includes -->
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+    <!-- user intent: "hide DEBUG, show everything else" -->
+    <filefilter>
+      <filename>excludes-only.log</filename>
+      <includes />
+      <excludes><keyword>DEBUG</keyword></excludes>
+    </filefilter>
+
+    <!-- a filter that DOES declare includes must stay a strict allow-list -->
+    <filefilter>
+      <filename>allow-list.log</filename>
+      <includes><keyword>keep</keyword></includes>
+      <excludes />
+    </filefilter>
+  </filtering>
+
+</ctrail>

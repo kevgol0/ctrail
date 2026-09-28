@@ -144,7 +144,13 @@
         <excludesEnabled>true</excludesEnabled>
 
         <!-- verdict for a line that matched NEITHER list, on a source that
-            does have a filter. false makes each filter a strict allow-list -->
+            does have a filter. false makes each filter a strict allow-list.
+
+            NOTE this also decides for a <filefilter> that declares NO
+            <includes> at all: with false, such a filter emits nothing.
+            To write a deny-list ("hide DEBUG, show everything else") set this
+            to true and use <excludes> alone. The setting is global, so a
+            config cannot mix strict allow-lists and deny-lists. -->
         <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
 
 
