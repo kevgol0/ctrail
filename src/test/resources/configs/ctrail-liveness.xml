@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ctrail>
+
+  <!-- fixture for the liveness features: tail-N, startup banner, idle notices -->
+  <inputFiles>
+    <maxInputFileCount>1000</maxInputFileCount>
+  </inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>100000</maxPendingLines>
+    <prependFilenameToLine>true</prependFilenameToLine>
+
+    <!-- tail-N takes precedence, so the byte-skip below must never apply -->
+    <skipAheadInBytes>1000</skipAheadInBytes>
+    <tailLastLines>3</tailLastLines>
+
+    <showStartupBanner>true</showStartupBanner>
+
+    <!-- one second keeps the suite fast; no test waits 30s -->
+    <idleNoticeSeconds>1</idleNoticeSeconds>
+
+    <noChangeSleepTimeMillis>10</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>false</matchFirstWord>
+  </execution>
+
+
+  <coloring>
+    <!-- deliberately NOT the compiled default (cyan), so the tests prove this
+         value is actually read from the config rather than defaulted -->
+    <noticeColor>purple</noticeColor>
+
+    <filename>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
+    </filename>
+
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+
+      <!-- present so a notice containing "error" can be proven NOT to pick it up.
+           NOTE: two colorpairs are required - initColoring only recognises the
+           block when commons-configuration returns a collection, which it does
+           not for a single pair -->
+      <colorpair>
+        <keyword>error</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+      <colorpair>
+        <keyword>warn</keyword>
+        <fgcolor>yellow</fgcolor>
+      </colorpair>
+    </linecolors>
+  </coloring>
+
+</ctrail>

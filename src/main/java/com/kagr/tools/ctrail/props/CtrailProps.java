@@ -77,6 +77,12 @@ public class CtrailProps
 
 	@Getter @Setter private int _noChangeSleepTimeMillis = 100;
 
+	@Getter @Setter private int _tailLastLines = 10;
+
+	@Getter @Setter private boolean _showStartupBanner = true;
+
+	@Getter @Setter private int _idleNoticeSeconds = 30;
+
 	@Getter @Setter private boolean _lineSearchCaseSensitiveMatching = false;
 
 	@Getter @Setter private boolean _prependFilenameToLine = true;
@@ -98,6 +104,8 @@ public class CtrailProps
 	@Getter @Setter private String _defaultFgColor = "white";
 
 	@Getter @Setter private String _defaultFlColor = "";
+
+	@Getter @Setter private String _noticeColor = ConsoleColors.CYAN;
 
 	@Getter private String _version;
 
@@ -191,6 +199,17 @@ public class CtrailProps
 			setEnabledFileFiltering(config.getBoolean("filtering.enabled", _enabledFileFiltering));
 			setEnabledExcludeFiltering(config.getBoolean("filtering.excludesEnabled", _enabledExcludeFiltering));
 			setFileFilterDefaultsToInclude(config.getBoolean("filtering.fileFilterDefaultsToInclude", _fileFilterDefaultsToInclude));
+
+
+			//
+			// file-liveness settings: how much history to show when a file is
+			// opened, whether to announce each file, and how long a source may
+			// stay silent before ctrail says so
+			//
+			setTailLastLines(config.getInt("execution.tailLastLines", _tailLastLines));
+			setShowStartupBanner(config.getBoolean("execution.showStartupBanner", _showStartupBanner));
+			setIdleNoticeSeconds(config.getInt("execution.idleNoticeSeconds", _idleNoticeSeconds));
+			setNoticeColor(getColorCode(config.getString("coloring.noticeColor", "cyan")));
 
 			initColoring(config);
 			initFiltering(config);

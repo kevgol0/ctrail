@@ -55,6 +55,8 @@ public class StdinReaderThread implements Runnable
 
 	@Getter private final IShutdownManager _ender;
 
+	@Getter private final ActivityState _activityState;
+
 
 
 
@@ -68,6 +70,16 @@ public class StdinReaderThread implements Runnable
 		_match = match_;
 		_ender = shutdownMgr_;
 		_searchFilter = filter_;
+
+
+		//
+		// liveness bookkeeping for the idle monitor. the notice always names the
+		// source "stdin" regardless of prependFilenameToLine, which governs only
+		// the per-line prefix
+		//
+		_activityState = new ActivityState(CtrailProps.STDIN_FILTER_NAME,
+				System.currentTimeMillis(),
+				CtrailProps.getInstance().getIdleNoticeSeconds() * 1000L);
 
 		setOutput(output_);
 	}
@@ -92,6 +104,13 @@ public class StdinReaderThread implements Runnable
 		{
 			_logger.trace("finished read from std-in");
 		}
+
+
+		//
+		// the pipe is closed: mark the source finished so the idle monitor stops
+		// announcing silence that can never end
+		//
+		_activityState.setFinished(true);
 
 
 		//
@@ -129,6 +148,13 @@ public class StdinReaderThread implements Runnable
 					continue;
 				}
 
+				//
+				// record movement BEFORE the line is queued, so a "resumed"
+				// notice lands ahead of the data that ended the silence. only
+				// lines that survive shouldEmit count - output you cannot see is
+				// not movement
+				//
+				IdleMonitorThread.noteActivity(_activityState, _output);
 				_output.put(new LogLine(source, line, _searchFilter));
 			}
 		}

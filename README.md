@@ -139,9 +139,15 @@ matching `<filefilter>`, and piped input when no `<stdinfilter>` is declared.
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
     <matchFirstWord>false</matchFirstWord>
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+
+    <!-- file liveness -->
+    <tailLastLines>10</tailLastLines>
+    <showStartupBanner>true</showStartupBanner>
+    <idleNoticeSeconds>30</idleNoticeSeconds>
   </execution>
 
   <coloring>
+    <noticeColor>cyan</noticeColor>
     <filename>
       <blankLineOnFileChange>false</blankLineOnFileChange>
     </filename>
@@ -168,6 +174,35 @@ matching `<filefilter>`, and piped input when no `<stdinfilter>` is declared.
   </filtering>
 </ctrail>
 ```
+
+### Knowing whether a file is actually moving
+
+The hardest thing about watching a quiet log is telling "nothing is happening" apart from "ctrail
+is broken". Three settings answer that at three different moments.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `tailLastLines` | `10` | Shows the last N lines when a file is opened, the same idea as `tail -n N`. Line-accurate, so the first line is never cut in half. `0` disables it and falls back to `skipAheadInBytes`. |
+| `showStartupBanner` | `true` | Prints one line per input at startup with the file size and how long ago it last changed — `ctrail: app.log - 12 KB, modified 4m 12s ago`. For a pipe it prints `ctrail: watching stdin`. |
+| `idleNoticeSeconds` | `30` | After this many seconds of silence, prints `ctrail: app.log - no movement in 30s`, and repeats at the same interval while the source stays quiet. When data returns it prints `ctrail: app.log - resumed after 4m 12s` just ahead of the new line. `0` disables it. |
+| `coloring.noticeColor` | `cyan` | The color for ctrail's own messages. They never pick up keyword coloring, so a notice mentioning "error" is not rendered as an error. |
+
+All of this works for stdin as well as files, except `tailLastLines` — a pipe is not seekable, so
+there is no history to recover. Idle notices stop when the pipe closes.
+
+```
+ctrail: watching app.log - 12 KB, modified 4m 12s ago
+app.log:line 46
+app.log:line 47
+ctrail: app.log - no movement in 30s
+ctrail: app.log - no movement in 1m 00s
+ctrail: app.log - resumed after 1m 24s
+app.log:line 48
+```
+
+Only lines that survive matching and filtering count as movement. A filter that drops everything
+will still report the source as idle, which is what you want — output you cannot see is not
+evidence that anything is happening.
 
 ### Available colors
 
@@ -245,6 +280,12 @@ CTRAIL_CFG=etc/ctrail-stdin-example.xml some-command | ctr
 # read entire file (not just tail)
 ctr -e /var/log/app.log
 
+# show the last 50 lines on open, then follow
+ctr -n 50 /var/log/app.log
+
+# follow only new lines, no history at all
+ctr -n 0 /var/log/app.log
+
 # filter lines matching a string
 ctr -m "ERROR" /var/log/app.log
 
@@ -263,8 +304,9 @@ ctr --version
 
 | Flag | Long | Description |
 |------|------|-------------|
-| `-e` | `--entirefile` | Process the entire file, not just new lines |
+| `-e` | `--entirefile` | Process the entire file, not just new lines (disables `-n` and `skipAheadInBytes`) |
 | `-m` | `--match STR` | Only show lines matching STR |
+| `-n` | `--lines N` | Show the last N lines of each file on open, like `tail -n N`; `0` disables. Overrides `tailLastLines` |
 | `-f` | `--filters` | Enable/disable include filters (`true`/`false`) |
 | `-v` | `--exclude-filters` | Enable/disable exclude filters (`true`/`false`) |
 | `-h` | `--help` | Print help |
@@ -291,7 +333,7 @@ See [`etc/ctrail-stdin-example.xml`](etc/ctrail-stdin-example.xml) for a ready-t
 ./bin/install.sh
 
 # or specify a version explicitly
-./bin/install.sh 1.1.0
+./bin/install.sh 1.2.0
 ```
 
 The install script downloads from [GitHub Releases](https://github.com/kevgol0/ctrail/releases) and places files at:

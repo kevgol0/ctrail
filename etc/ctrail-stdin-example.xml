@@ -27,6 +27,16 @@
         <!-- read from the beginning (no skip-ahead for a pipe) -->
         <skipAheadInBytes>0</skipAheadInBytes>
 
+        <!-- a pipe is not seekable, so there is no history to tail -->
+        <tailLastLines>0</tailLastLines>
+
+        <!-- confirms ctrail started and is reading the pipe -->
+        <showStartupBanner>true</showStartupBanner>
+
+        <!-- a silent pipe gives you nothing to check, so this matters more here
+            than it does on a file; 0 disables -->
+        <idleNoticeSeconds>30</idleNoticeSeconds>
+
         <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
         <matchFirstWord>false</matchFirstWord>
         <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
@@ -34,6 +44,9 @@
 
 
     <coloring>
+        <!-- color for ctrail's own banner and idle/resumed notices -->
+        <noticeColor>cyan</noticeColor>
+
         <filename>
             <blankLineOnFileChange>false</blankLineOnFileChange>
         </filename>

@@ -21,12 +21,17 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
 
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -38,12 +43,15 @@ import org.apache.commons.cli.ParseException;
 
 
 
+import com.kagr.tools.ctrail.files.ActivityState;
 import com.kagr.tools.ctrail.files.FileReaderThread;
 import com.kagr.tools.ctrail.files.FileTailTracker;
+import com.kagr.tools.ctrail.files.IdleMonitorThread;
 import com.kagr.tools.ctrail.files.OutputWriterThread;
 import com.kagr.tools.ctrail.files.StdinReaderThread;
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
+import com.kagr.tools.ctrail.unit.DurationFormatter;
 import com.kagr.tools.ctrail.unit.LogLine;
 
 
@@ -60,9 +68,13 @@ public class CtrailEntryPoint implements IShutdownManager
 {
 	private Thread					_reader;
 	private Thread					_writer;
+	private IdleMonitorThread		_idleMonitor;
 	private BlockingDeque<LogLine>	_output;
 	private String					_matchpattern;
 	private final Object			_runtimeHolder;
+
+	/** snapshot handed to the idle monitor; never the live tracker deque */
+	private final List<ActivityState> _activitySources = new ArrayList<>();
 
 	@Getter private BlockingDeque<FileTailTracker> _fileTrackers;
 
@@ -116,7 +128,10 @@ public class CtrailEntryPoint implements IShutdownManager
 			{
 				_logger.trace("filter for stdin found:{}", filter.toString());
 			}
-			_reader = new Thread(new StdinReaderThread(System.in, _output, _matchpattern, this, filter));
+			final StdinReaderThread stdinReader = new StdinReaderThread(System.in, _output, _matchpattern, this, filter);
+			_activitySources.add(stdinReader.getActivityState());
+			emitBanner("watching " + CtrailProps.STDIN_FILTER_NAME);
+			_reader = new Thread(stdinReader);
 			_reader.setName("istream-reader");
 		}
 		else
@@ -125,6 +140,14 @@ public class CtrailEntryPoint implements IShutdownManager
 		}
 
 
+		//
+		// the watchdog that reports silence; only worth a thread when notices
+		// are actually switched on
+		//
+		if (CtrailProps.getInstance().getIdleNoticeSeconds() > 0 && !_activitySources.isEmpty())
+		{
+			_idleMonitor = new IdleMonitorThread(_activitySources, _output);
+		}
 	}
 
 
@@ -173,6 +196,14 @@ public class CtrailEntryPoint implements IShutdownManager
 				final FileTailTracker ftracker = new FileTailTracker(filename, new RandomAccessFile(file, "r"));
 				findAndSetFileTracker(fstMap, filename, ftracker);
 				deq.add(ftracker);
+
+
+				//
+				// announce the file and register it with the idle monitor before
+				// any tailing starts, so the banner is the first thing on screen
+				//
+				emitBanner(describeFile(file, filename));
+				_activitySources.add(ftracker.getActivityState());
 				cntr += 1;
 			}
 			catch (final Exception ex_)
@@ -181,6 +212,45 @@ public class CtrailEntryPoint implements IShutdownManager
 			}
 		}
 		return deq;
+	}
+
+
+
+
+
+	/**
+	 * Builds the startup banner text for a file: how big it is and how long ago it last
+	 * changed. A file that has not moved in days is then obvious the instant ctrail starts.
+	 *
+	 * @param file_        the file being tailed
+	 * @param displayName_ the short name shown to the user
+	 * @return the banner text, without the ctrail prefix
+	 */
+	private String describeFile(final File file_, final String displayName_)
+	{
+		final long ageMillis = System.currentTimeMillis() - file_.lastModified();
+		return StringUtils.join("watching ", displayName_, " - ",
+				FileUtils.byteCountToDisplaySize(file_.length()),
+				", modified ", DurationFormatter.format(ageMillis), " ago");
+	}
+
+
+
+
+
+	/**
+	 * Queues one of ctrail's own startup messages, when banners are enabled.
+	 *
+	 * @param message_ the banner text, without the ctrail prefix
+	 */
+	private void emitBanner(final String message_)
+	{
+		if (!CtrailProps.getInstance().isShowStartupBanner())
+		{
+			return;
+		}
+
+		_output.offer(new LogLine(null, "ctrail: " + message_, null, true));
 	}
 
 
@@ -221,6 +291,29 @@ public class CtrailEntryPoint implements IShutdownManager
 
 
 
+	/**
+	 * Applies the -n/--lines override. A value that is not a number leaves the configured
+	 * setting alone rather than failing the run - the tool still has a sane default.
+	 *
+	 * @param value_ the raw command line value
+	 */
+	private void setTailLastLinesFromArg(final String value_)
+	{
+		if (!StringUtils.isNumeric(value_))
+		{
+			_logger.warn("ignoring non-numeric value for -n/--lines:{}", value_);
+			return;
+		}
+
+		final int lines = Integer.parseInt(value_);
+		_logger.debug("tail-last-lines overridden from command line:{}", lines);
+		CtrailProps.getInstance().setTailLastLines(lines);
+	}
+
+
+
+
+
 	private String[] loadArgsAndOverrides(final String[] args_)
 	{
 		final CommandLineParser parser = new DefaultParser();
@@ -237,6 +330,12 @@ public class CtrailEntryPoint implements IShutdownManager
 				.longOpt("match").hasArg()
 				.argName("STR")
 				.desc("only show lines that match STR")
+				.build());
+
+		options.addOption(Option.builder("n")
+				.longOpt("lines").hasArg()
+				.argName("N")
+				.desc("show the last N lines of each file on open (default 10; 0 disables)")
 				.build());
 
 		options.addOption(Option.builder("f")
@@ -268,11 +367,19 @@ public class CtrailEntryPoint implements IShutdownManager
 
 			if (line.hasOption("e"))
 			{
+				//
+				// the whole file means no tail positioning of any kind
+				//
 				CtrailProps.getInstance().setSkipAheadInBytes(0);
+				CtrailProps.getInstance().setTailLastLines(0);
 			}
 			if (line.hasOption("m"))
 			{
 				_matchpattern = line.getOptionValue("m");
+			}
+			if (line.hasOption("n"))
+			{
+				setTailLastLinesFromArg(line.getOptionValue("n"));
 			}
 			if (line.hasOption("f"))
 			{
@@ -355,6 +462,11 @@ public class CtrailEntryPoint implements IShutdownManager
 		_logger.trace("strating worker threads");
 		_reader.start();
 		_writer.start();
+
+		if (_idleMonitor != null)
+		{
+			_idleMonitor.start();
+		}
 	}
 
 
@@ -413,6 +525,19 @@ public class CtrailEntryPoint implements IShutdownManager
 			_logger.debug("starting shutdown process...");
 		}
 
+
+
+		//
+		// the monitor goes first: stopped after the writer, a late notice could
+		// be printed behind the last real line while the queue drains
+		//
+		if (_idleMonitor != null)
+		{
+			_logger.trace("stopping idle monitor");
+			_idleMonitor.setShouldContinue(false);
+			_idleMonitor.interrupt();
+			_idleMonitor = null;
+		}
 
 
 		if (_reader != null)
