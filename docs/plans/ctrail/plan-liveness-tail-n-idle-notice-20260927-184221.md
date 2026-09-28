@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-27
 **Status:** `[FINISHED]` — 2026-09-27, all tests pass
-**Branch:** `feat/liveness-tail-n-idle-notice` (cut from `master` @ `d43630d`)
+**Branch:** `feat/liveness-tail-n-idle-notice` — cut from `d43630d` (1.1.0), rebased onto `3ecf55a` (1.1.1) on 2026-09-27; see [plan-rebase-liveness-onto-111-20260927-203913.md](plan-rebase-liveness-onto-111-20260927-203913.md)
 **Jira:** _n/a — personal tool repo, no Jira project_
 **Confluence:** _not published — personal tool repo, no team space_
 **Supersedes:** `plan-tail-n-and-idle-notification-20260923-082716.md` (`[DRAFT]`, never approved) — deleted 2026-09-27 at the user's request.
@@ -381,25 +381,16 @@ None blocking. Two calls I made for you, reversible on request:
 
 ## Follow-ups (not this change)
 
-Two pre-existing bugs surfaced while testing. **Neither is caused by this change and neither is
-fixed here** — both are separate behaviour changes that deserve their own plan.
+Three defects were found while testing this work. **All three were fixed upstream in the 1.1.1
+release** (`2cb0bdf`) that landed on master while this branch was in flight — the last line
+dropped at shutdown, a single-`<colorpair>` config loading no colors, and `prependFilenameToLine`
+being ignored for stdin. This branch is rebased onto that work and carries none of them.
 
-1. **The last line is dropped at shutdown.** `OutputWriterThread.run()` drains with
-   `int sz = _output.size() - 1;`, one short of what is queued. Reproduced on the **master** jar
-   (`printf 'alpha\nbravo\ncharlie\n' | ctr` prints only alpha and bravo, 5 runs out of 5),
-   so it predates this branch. Most visible on stdin, where EOF triggers shutdown immediately.
-2. **A config with exactly one `<colorpair>` gets no colors at all.** `initColoring()` does
-   `((Collection<?>) config.getProperty("coloring.linecolors.colorpair.fgcolor")).size()`, and
-   commons-configuration returns a bare `String` for a single element, so the `ClassCastException`
-   is swallowed and the count stays 0. `extractCount()` already handles this correctly for
-   filters; `initColoring` does not use it. Both test fixtures here carry two colorpairs to work
-   around it.
-
-Also outstanding:
+Still outstanding:
 
 - Raise the repo to Corretto 21 + JUnit 5 + Mockito.
-- `_output.add(...)` → `offer(...)` on the existing line-emission paths, so a full queue degrades
-  instead of killing the reader thread.
+- 8 Dependabot advisories on master (1 critical, 3 high, 4 moderate) against logback 1.2.3,
+  commons-configuration2 2.7 and commons-io 2.7.
 
 ## Definition of Done
 

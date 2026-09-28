@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.Deque;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
 
@@ -46,7 +46,7 @@ public class StdinReaderThreadIdleTest
 	/** an epoch-1970 marker, so any real activity timestamp is unmistakably newer */
 	private static final long _marker = 1000L;
 
-	private Deque<LogLine> _out;
+	private BlockingDeque<LogLine> _out;
 	private IShutdownManager _noopShutdown;
 
 
@@ -151,7 +151,7 @@ public class StdinReaderThreadIdleTest
 	@Test
 	public void stdinIsNamedForItsNotices()
 	{
-		assertEquals("stdin", readerFor("", null).getActivityState().getName());
+		assertEquals(CtrailProps.STDIN_FILTER_NAME, readerFor("", null).getActivityState().getName());
 	}
 
 

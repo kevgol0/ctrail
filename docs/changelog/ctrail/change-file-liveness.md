@@ -1,6 +1,6 @@
 # Feature: File Liveness Signals
 
-**Added:** 2026-09-27 — `feat/liveness-tail-n-idle-notice`
+**Added:** 2026-09-27 — `feat/liveness-tail-n-idle-notice`, on top of 1.1.1
 
 ## Summary
 
@@ -101,21 +101,38 @@ reporting that nothing is happening.
 ## Test results
 
 ```
-Tests run: 60, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 94, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
-60 tests (21 before), stable across 3 consecutive `mvn clean test` runs. Every new production
-line was verified by deleting it and watching a test go red — **18/18 mutations detected**.
+94 tests — this branch's liveness tests alongside the 1.1.1 suite it now sits on. Every new
+production line was verified by deleting it and watching a test go red: **12/12 mutations detected
+on the rebased code**, re-run from scratch because the stdin path was restructured underneath the
+original checks.
 
 Smoke-tested against the packaged jar: file mode (banner, tail-N, idle, repeat, resume, re-idle),
 stdin mode (banner, idle, resume), `-n 12`, `-n 0`, `-n abc`, `-e`, and an all-features-off
 config confirming the original byte-skip behaviour is untouched.
 
-## Known pre-existing bugs (not introduced, not fixed here)
+## Bugs found while building this, all fixed upstream
 
-- **The last line is dropped at shutdown.** `OutputWriterThread` drains `size() - 1`. Reproduced
-  on the master jar 5 runs out of 5. Most visible on stdin, where EOF shuts down immediately.
-- **A config with exactly one `<colorpair>` gets no colors.** `initColoring` casts a bare
-  `String` to `Collection` and swallows the failure; `extractCount` already handles this
-  correctly for filters but is not used there.
+Three defects surfaced during testing. All three were fixed independently in the **1.1.1** release
+(`2cb0bdf`) that landed on master while this branch was in flight, so none of them are carried
+here:
+
+- **The last line was dropped at shutdown** — `OutputWriterThread` drained `size() - 1`. 1.1.1
+  also made the writer poll instead of parking in `take()`, made the flag volatile, drains
+  oldest-first and flushes on exit.
+- **A config with exactly one `<colorpair>` loaded no colors.** Fixed in 1.1.1 with the same
+  `extractCount` call this branch had briefly duplicated; that duplicate commit was dropped during
+  the rebase.
+- **`prependFilenameToLine` was ignored for stdin.** 1.1.1 made the source name conditional.
+
+This branch is rebased onto that work and its tests run green alongside it.
+
+## Rebase note
+
+Originally cut from `d43630d` (1.1.0). Rebased onto `3ecf55a` (1.1.1) on 2026-09-27. The stdin
+read path was restructured upstream from three loops into a single `readStdin()`/`shouldEmit()`
+pair, so the liveness hook is now **one** `noteActivity` call rather than three. The full suite
+(94 tests) and the mutation checks (12/12) were re-run on the new base.

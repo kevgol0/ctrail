@@ -1,7 +1,7 @@
 # Modifications: File Liveness — Tail-N, Startup Banner, Idle Notices
 
 **Date:** 2026-09-27
-**Branch:** `feat/liveness-tail-n-idle-notice` (from `master` @ `d43630d`)
+**Branch:** `feat/liveness-tail-n-idle-notice` — cut from `d43630d` (1.1.0), **rebased onto `3ecf55a` (1.1.1)** on 2026-09-27
 **Plan:** [plan-liveness-tail-n-idle-notice-20260927-184221.md](../../plans/ctrail/plan-liveness-tail-n-idle-notice-20260927-184221.md)
 
 ---
@@ -25,18 +25,18 @@ Plus a `-n/--lines N` flag mirroring `tail -n`.
 
 ### Result
 
-- **60 tests pass** (21 before), 3 consecutive clean runs.
-- **18/18 mutations detected** — every new production line has a test that goes red without it.
+- **94 tests pass** — the liveness tests alongside the 1.1.1 suite this now sits on.
+- **12/12 mutations detected on the rebased code**, re-run from scratch because the stdin path was
+  restructured upstream.
 - Smoke-tested against the packaged jar for files, stdin, both CLI flags and back-compat.
 
-### Two pre-existing bugs found, neither fixed here
+### Three bugs found while building this — all fixed upstream, none carried here
 
-1. **Last line dropped at shutdown** — `OutputWriterThread` drains `size() - 1`. Reproduced on
-   the **master** jar 5/5, so it predates this branch.
-2. **A single `<colorpair>` yields no colors** — `initColoring` casts a bare `String` to
-   `Collection` and swallows the failure.
-
-Both are separate behaviour changes and belong in their own plan.
+The **1.1.1** release (`2cb0bdf`) landed on master while this branch was in flight and fixed all
+three independently: the last line dropped at shutdown (`OutputWriterThread` draining
+`size() - 1`), a single-`<colorpair>` config loading no colors, and `prependFilenameToLine` being
+ignored for stdin. A commit on this branch that duplicated the colorpair fix was dropped during
+the rebase.
 
 ### One design deviation from the approved plan
 
