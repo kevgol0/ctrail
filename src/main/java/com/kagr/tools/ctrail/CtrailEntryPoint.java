@@ -51,6 +51,7 @@ import com.kagr.tools.ctrail.files.OutputWriterThread;
 import com.kagr.tools.ctrail.files.StdinReaderThread;
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
+import com.kagr.tools.ctrail.props.TailUnit;
 import com.kagr.tools.ctrail.unit.DurationFormatter;
 import com.kagr.tools.ctrail.unit.LogLine;
 
@@ -334,42 +335,43 @@ public class CtrailEntryPoint implements IShutdownManager
 
 
 	/**
-	 * Applies the -n/--lines override. A value that is not a number leaves the configured
-	 * setting alone rather than failing the run - the tool still has a sane default.
+	 * Applies the -n/--lines or -c/--bytes override. A value that is not a usable
+	 * number leaves the configured setting alone rather than failing the run - the
+	 * tool still has a sane default.
 	 *
 	 * @param value_ the raw command line value
+	 * @param unit_  lines for -n, bytes for -c
 	 */
-	protected void setTailLastLinesFromArg(final String value_)
+	protected void setTailLastFromArg(final String value_, final TailUnit unit_)
 	{
 		//
 		// parse is the guard. StringUtils.isNumeric only tests digit-ness, so an
 		// all-digit value above Integer.MAX_VALUE passed it and then threw out of
 		// the constructor, killing the run this method promises not to fail
 		//
-		final int lines;
+		final int count;
 		try
 		{
-			lines = Integer.parseInt(StringUtils.trimToEmpty(value_));
+			count = Integer.parseInt(StringUtils.trimToEmpty(value_));
 		}
 		catch (final NumberFormatException ex_)
 		{
-			_logger.warn("ignoring unusable value for -n/--lines:{} ({})", value_, ex_.getMessage());
+			_logger.warn("ignoring unusable {} count:{} ({})", unit_.configName(), value_, ex_.getMessage());
 			return;
 		}
 
 
 		//
-		// a negative count is not meaningful and would be read as "disabled" by
-		// the tail-N branch, which is not what the user asked for
+		// a negative count is not meaningful; 0 is, and means "start at the end"
 		//
-		if (lines < 0)
+		if (count < 0)
 		{
-			_logger.warn("ignoring negative value for -n/--lines:{}", value_);
+			_logger.warn("ignoring negative {} count:{}", unit_.configName(), value_);
 			return;
 		}
 
-		_logger.debug("tail-last-lines overridden from command line:{}", lines);
-		CtrailProps.getInstance().setTailLastLines(lines);
+		_logger.debug("tail-last overridden from command line:{} {}", count, unit_.configName());
+		CtrailProps.getInstance().setTailLast(count, unit_);
 	}
 
 
@@ -397,7 +399,13 @@ public class CtrailEntryPoint implements IShutdownManager
 		options.addOption(Option.builder("n")
 				.longOpt("lines").hasArg()
 				.argName("N")
-				.desc("show the last N lines of each file on open (default 10; 0 disables)")
+				.desc("show the last N lines of each file on open (default 10; 0 shows only new lines)")
+				.build());
+
+		options.addOption(Option.builder("c")
+				.longOpt("bytes").hasArg()
+				.argName("N")
+				.desc("show the last N bytes of each file on open (0 shows only new lines); -n wins if both are given")
 				.build());
 
 		options.addOption(Option.builder("f")
@@ -431,14 +439,29 @@ public class CtrailEntryPoint implements IShutdownManager
 			{
 				_matchpattern = line.getOptionValue("m");
 			}
+			//
+			// -n wins when both are given, matching tailLastLines' precedence
+			// over skipAheadInBytes in the config
+			//
+			if (line.hasOption("c"))
+			{
+				if (line.hasOption("n"))
+				{
+					_logger.warn("both -n and -c given; -n wins, -c ignored");
+				}
+				else
+				{
+					setTailLastFromArg(line.getOptionValue("c"), TailUnit.BYTES);
+				}
+			}
 			if (line.hasOption("n"))
 			{
-				setTailLastLinesFromArg(line.getOptionValue("n"));
+				setTailLastFromArg(line.getOptionValue("n"), TailUnit.LINES);
 			}
 
 
 			//
-			// -e is applied AFTER -n so that it wins, which is what the README and
+			// -e is applied AFTER -n and -c so that it wins, which is what the README and
 			// the help text promise. Applied before, -n silently overwrote it and
 			// `ctr -e -n 50` showed 50 lines instead of the whole file
 			//
@@ -447,8 +470,7 @@ public class CtrailEntryPoint implements IShutdownManager
 				//
 				// the whole file means no tail positioning of any kind
 				//
-				CtrailProps.getInstance().setSkipAheadInBytes(0);
-				CtrailProps.getInstance().setTailLastLines(0);
+				CtrailProps.getInstance().setReadEntireFile(true);
 			}
 			if (line.hasOption("f"))
 			{

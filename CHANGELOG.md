@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+* **`<tailLast>`** — one setting for how much history to show when a file is opened, replacing
+  `tailLastLines` and `skipAheadInBytes` (CTRAIL-8):
+
+  ```xml
+  <execution>
+    <tailLast>
+      <count>10</count>     <!-- N | 0 = start at the end | all = whole file -->
+      <unit>lines</unit>    <!-- lines | bytes -->
+    </tailLast>
+  </execution>
+  ```
+
+  A missing or unknown `<unit>` means `lines`; an unusable `<count>` means `10 lines`. Each logs a
+  WARN rather than refusing to start.
+
+* **`-c/--bytes N`** — the byte counterpart of `-n/--lines N`, like `tail -c`. If both are given,
+  `-n` wins and a WARN says so. `-e` still beats both.
+
+### Fixed
+
+* **`skipAheadInBytes` was silently ignored.** (CTRAIL-8)
+
+  Since 1.2.0, `tailLastLines` defaulted to `10` and always won, so a config with only
+  `<skipAheadInBytes>500000</skipAheadInBytes>` showed 10 lines instead of the last 500 KB. It now
+  applies again.
+
+### Deprecated
+
+* `tailLastLines` and `skipAheadInBytes`. Both still parse with their old meaning and log a WARN
+  naming the `<tailLast>` replacement:
+
+  | Deprecated config | Becomes |
+  |---|---|
+  | `tailLastLines` = N > 0 (wins over `skipAheadInBytes`, conflict logged) | `N lines` |
+  | `tailLastLines=0`, with or without `skipAheadInBytes` | `skipAheadInBytes` bytes (default 1000) |
+  | `skipAheadInBytes=0` | `all` |
+
+  An explicit `<tailLast>` beats both, with a WARN that they were ignored.
+
+### ⚠️ Behaviour change on upgrade
+
+* **`-n 0` now shows no history** (only new lines, like `tail -n 0`). Before, it fell back to the
+  byte skip and showed the last 1000 bytes.
+* A config that sets `skipAheadInBytes` but not `tailLastLines` gets its byte skip back instead of
+  10 lines — the fix above, but visible.
+
 ## 1.3.1
 
 ### Fixed

@@ -73,7 +73,7 @@ public class FileReaderThreadFilterTest
 		final CtrailProps props = CtrailProps.getInstance();
 
 		// read from byte 0 so the fixture content is actually seen
-		props.setSkipAheadInBytes(0);
+		props.setReadEntireFile(true);
 		props.setEnabledFileFiltering(true);
 		props.setEnabledExcludeFiltering(true);
 		props.setPrependFilenameToLine(false);

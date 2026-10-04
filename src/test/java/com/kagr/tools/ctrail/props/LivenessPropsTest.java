@@ -41,7 +41,8 @@ public class LivenessPropsTest
 	{
 		final CtrailProps props = load("ctrail-liveness.xml");
 
-		assertEquals(3, props.getTailLastLines());
+		assertEquals(3, props.getTailLastCount());
+		assertEquals(TailUnit.LINES, props.getTailLastUnit());
 		assertTrue(props.isShowStartupBanner());
 		assertEquals(1, props.getIdleNoticeSeconds());
 
@@ -60,7 +61,7 @@ public class LivenessPropsTest
 	{
 		final CtrailProps props = load("ctrail-liveness-disabled.xml");
 
-		assertEquals(0, props.getTailLastLines());
+		assertEquals("tailLastLines=0 defers to the byte skip", TailUnit.BYTES, props.getTailLastUnit());
 		assertFalse(props.isShowStartupBanner());
 		assertEquals(0, props.getIdleNoticeSeconds());
 	}
@@ -77,8 +78,9 @@ public class LivenessPropsTest
 		//
 		final CtrailProps props = load("ctrail-liveness-disabled.xml");
 
-		assertEquals(0, props.getTailLastLines());
-		assertEquals(1000, props.getSkipAheadInBytes());
+		assertEquals(TailUnit.BYTES, props.getTailLastUnit());
+		assertEquals(1000, props.getTailLastCount());
+		assertFalse(props.isReadEntireFile());
 	}
 
 
@@ -93,7 +95,12 @@ public class LivenessPropsTest
 		//
 		final CtrailProps props = load("ctrail-file-regex.xml");
 
-		assertEquals(10, props.getTailLastLines());
+		//
+		// it does set skipAheadInBytes=1000, and that now applies: before
+		// CTRAIL-8 the tailLastLines default made it unreachable
+		//
+		assertEquals(TailUnit.BYTES, props.getTailLastUnit());
+		assertEquals(1000, props.getTailLastCount());
 		assertTrue(props.isShowStartupBanner());
 		assertEquals(30, props.getIdleNoticeSeconds());
 		assertEquals(ConsoleColors.CYAN, props.getNoticeColor());

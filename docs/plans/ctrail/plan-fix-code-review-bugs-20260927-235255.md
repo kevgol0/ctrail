@@ -179,18 +179,38 @@ Read bytes and decode explicitly with a configurable charset defaulting to UTF-8
 Highest regression risk in the list — it sits under the read loop, the tail-N seek and every filter
 comparison. Wants its own PR and its own non-ASCII test fixtures.
 
-### Phase 6b — `feat/tail-last-unified-config` (CTRAIL-8)
+### Phase 6b — `feat/tail-last-unified-config` (CTRAIL-8) `[FINISHED]` — branch `CTRAIL-8/tail-last-unified-config`, target 1.4.0
 
-New `<tailLast>` key parsed as `<number> <unit>` where unit is `lines` or `bytes`; a bare number is
-read as lines. `tailLastLines` and `skipAheadInBytes` map onto it and log a deprecation warning
-naming the replacement. `-n/--lines` keeps its current meaning; consider a matching `-c/--bytes`.
+⚠️ **Superseded design.** The unit-suffixed string above was rejected on the ticket (2026-09-28) in
+favour of nested elements. Decisions below taken 2026-10-04.
 
-Precedence when more than one is present: explicit `<tailLast>` beats either alias; if only the two
-aliases are set, `tailLastLines` wins and the conflict is logged.
+```xml
+<tailLast>
+  <count>10</count>     <!-- N | all -->
+  <unit>lines</unit>    <!-- lines | bytes -->
+</tailLast>
+```
 
-Tests: each unit parses; a bare number means lines; both aliases still work and warn; a malformed
-value falls back to the default with a warning rather than throwing; README and `etc/ctrail.xml`
-updated with the new key and the deprecation note.
+| Rule | Behaviour |
+|---|---|
+| `count` = N > 0 | last N lines / bytes |
+| `count` = 0 | **start at end** — no history (`tail -n 0`) |
+| `count` = `all` | whole file (replacement for `skipAheadInBytes=0`) |
+| missing / bad `unit` | `lines`, WARN |
+| non-numeric / negative `count` | default `10 lines`, WARN |
+| `<tailLast>` + any alias | `<tailLast>` wins, WARN naming ignored aliases |
+| aliases only | legacy meaning preserved: `tailLastLines` > 0 wins (conflict WARN); `tailLastLines=0` means unset → `skipAheadInBytes` (default 1000; `0` = whole file). Deprecation WARN per alias |
+| nothing set | `10 lines` |
+
+CLI: `-n N` (lines), new `-c/--bytes N` (bytes); both given → WARN, `-n` wins; `-e` beats both.
+⚠️ `-n 0` changes from "last 1000 bytes" to "no history".
+
+Code: `CtrailProps` replaces `_tailLastLines`/`_skipAheadInBytes` with `_tailLastCount`,
+`_tailLastUnit` (`TailUnit` enum), `_readEntireFile`; `FileTailTracker` positions from those.
+Parsing reads strings and parses locally so a bad value cannot abort the rest of config loading.
+
+Tests: each rule in the table; CLI `-c`, `-n`+`-c`, `-e` precedence; tracker positioning for 0,
+N lines, N bytes, all. Docs: README, `etc/ctrail.xml`, `etc/ctrail-stdin-example.xml`, CHANGELOG.
 
 ### Phase 7 — `chore/hot-path-cleanup` (CTRAIL-19, CTRAIL-20)
 

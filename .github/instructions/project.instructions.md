@@ -20,7 +20,7 @@ Spring, no database, no cloud infrastructure.
 | Fact | Value |
 |---|---|
 | Group / artifact | `com.kagr.tools` / `ctrail` |
-| Current version | `1.3.1` |
+| Current version | `1.4.0` |
 | Java | 8 (`maven-compiler-plugin` source/target `1.8`) |
 | Build | Maven; `maven-shade-plugin` produces an executable fat jar |
 | Entry point | `com.kagr.tools.ctrail.CtrailEntryPoint` |
