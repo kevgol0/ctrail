@@ -73,10 +73,19 @@ public class CtrailEntryPoint implements IShutdownManager
 	private String					_matchpattern;
 	private final Object			_runtimeHolder;
 
+	/**
+	 * set under _runtimeHolder before notifyAll(); a notify with no waiter is
+	 * otherwise lost, and a spurious wakeup is otherwise taken as an instruction
+	 */
+	@Getter private volatile boolean _shutdownRequested;
+
 	/** snapshot handed to the idle monitor; never the live tracker deque */
 	private final List<ActivityState> _activitySources = new ArrayList<>();
 
 	@Getter private BlockingDeque<FileTailTracker> _fileTrackers;
+
+	/** exit status when file arguments were given and none could be read */
+	static final int EXIT_NO_READABLE_INPUT = 2;
 
 
 
@@ -115,8 +124,19 @@ public class CtrailEntryPoint implements IShutdownManager
 			throw new RuntimeException("System not ready, initReaderThread called with no output mechanism");
 		}
 
+		//
+		// stdin only when no file was named. Keying this on "no trackers" also
+		// caught "every named file was unreadable", which silently tailed stdin
+		// and announced it - a typo'd filename hung on the terminal
+		//
 		_fileTrackers = getFilesFromArgs(args_);
-		if (_fileTrackers.size() <= 0)
+		if (args_.length > 0 && _fileTrackers.isEmpty())
+		{
+			throw new NoReadableInputException(StringUtils.join(
+					"none of the files given could be read: ", StringUtils.join(args_, ", ")));
+		}
+
+		if (args_.length == 0)
 		{
 			//
 			// resolveStdinFilter() picks <stdinfilter>, falls back to the
@@ -180,10 +200,11 @@ public class CtrailEntryPoint implements IShutdownManager
 				final String filename = p.getName(p.getNameCount() - 1).toString();
 				if (!file.isFile() || !file.canRead())
 				{
-					if (_logger.isInfoEnabled())
-					{
-						_logger.info("{} is either not a file or not readable", s);
-					}
+					//
+					// WARN, not INFO: logback's root is warn, so at INFO a typo'd
+					// filename was skipped with no visible trace
+					//
+					_logger.warn("{} is either not a file or not readable, skipping", s);
 					continue;
 				}
 
@@ -487,6 +508,7 @@ public class CtrailEntryPoint implements IShutdownManager
 		{
 			synchronized (_runtimeHolder)
 			{
+				_shutdownRequested = true;
 				_runtimeHolder.notifyAll();
 			}
 		}
@@ -545,20 +567,62 @@ public class CtrailEntryPoint implements IShutdownManager
 			{
 				if (millis_ > 0)
 				{
-					_runtimeHolder.wait(millis_);
+					awaitShutdownFor(millis_);
 				}
 				else
 				{
-					_runtimeHolder.wait();
+					awaitShutdownIndefinitely();
 				}
 			}
 		}
 		catch (InterruptedException ex_)
 		{
 			_logger.error(ex_.toString(), ex_);
+			Thread.currentThread().interrupt();
 		}
 
 		return;
+	}
+
+
+
+
+
+	/**
+	 * Waits until shutdown is requested. The flag, not the notify, is the
+	 * condition: a request made before this thread waited is still seen, and a
+	 * spurious wakeup goes back to waiting. Caller holds _runtimeHolder.
+	 *
+	 * @throws InterruptedException if the waiting thread is interrupted
+	 */
+	private void awaitShutdownIndefinitely() throws InterruptedException
+	{
+		while (!_shutdownRequested)
+		{
+			_runtimeHolder.wait();
+		}
+	}
+
+
+
+
+
+	/**
+	 * Waits until shutdown is requested or the timeout elapses, whichever comes
+	 * first. Caller holds _runtimeHolder.
+	 *
+	 * @param millis_ the maximum time to wait, in milliseconds; must be positive
+	 * @throws InterruptedException if the waiting thread is interrupted
+	 */
+	private void awaitShutdownFor(final int millis_) throws InterruptedException
+	{
+		final long deadline = System.currentTimeMillis() + millis_;
+		long remaining = millis_;
+		while (!_shutdownRequested && remaining > 0)
+		{
+			_runtimeHolder.wait(remaining);
+			remaining = deadline - System.currentTimeMillis();
+		}
 	}
 
 
@@ -633,7 +697,27 @@ public class CtrailEntryPoint implements IShutdownManager
 
 	public static void main(final String[] args_)
 	{
-		final CtrailEntryPoint trailer = new CtrailEntryPoint(args_);
+		//
+		// nothing to tail is a usage error: say so and exit non-zero rather
+		// than start threads that have nothing to read
+		//
+		final CtrailEntryPoint trailer;
+		try
+		{
+			trailer = new CtrailEntryPoint(args_);
+		}
+		catch (final NoReadableInputException ex_)
+		{
+			//
+			// stderr, not the logger: logback writes to stdout, which would put
+			// the error into whatever the output is piped to, and print it twice
+			//
+			_logger.debug("exiting, no readable input:{}", ex_.getMessage());
+			System.err.println("ctrail: " + ex_.getMessage());
+			System.exit(EXIT_NO_READABLE_INPUT);
+			return;
+		}
+
 		trailer.start();
 		trailer.awaitShutdownInstruction();
 		trailer.shutdown();

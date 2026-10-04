@@ -161,7 +161,7 @@ Grouped because they all concern a tracker's lifetime and all touch `FileTailTra
   and grow-after-truncate; rename-and-create stays out of scope (it needs reopen-by-path, which is a
   feature, not this fix).
 
-### Phase 5 — `fix/shutdown-and-stdin-fallback` (CTRAIL-1, CTRAIL-3)
+### Phase 5 — `fix/shutdown-and-stdin-fallback` (CTRAIL-1, CTRAIL-3) `[FINISHED]` — 1.3.1, branch `CTRAIL-1/shutdown-and-stdin-fallback`
 
 - **CTRAIL-1** — add `volatile boolean _shutdownRequested`, set inside the `synchronized` block
   before `notifyAll()`, and wait in `while (!_shutdownRequested) { _runtimeHolder.wait(); }`.
