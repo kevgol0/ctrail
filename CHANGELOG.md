@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.3.1
+
+### Fixed
+
+* **ctrail could hang forever on shutdown.** (CTRAIL-1)
+
+  The main thread waited with a bare `wait()` and no condition. If stdin hit EOF and asked for
+  shutdown before main reached `wait()`, the `notifyAll()` found no waiter and was lost; main
+  parked forever and the non-daemon writer kept the JVM alive. A `volatile` `_shutdownRequested`
+  flag is now set under the lock and the wait loops on it, which also stops a spurious wakeup from
+  tearing down a live tail. 200 runs of `ctr < /dev/null`: 0 hangs (previously ~1 in 30).
+
+* **A mistyped filename silently tailed stdin instead.** (CTRAIL-3)
+
+  stdin was chosen whenever no file could be opened, which included "every named file was
+  unreadable" — announced as `ctrail: watching stdin`, or a silent hang on a terminal. stdin is now
+  used only when **no file is named**. If files are named and none can be read, ctrail exits with
+  status **2**:
+
+  ```
+  $ ctr /tmp/typo.log
+  WARN  - /tmp/typo.log is either not a file or not readable, skipping
+  ctrail: none of the files given could be read: /tmp/typo.log
+  ```
+
+  The per-file skip message moved from INFO (invisible under the shipped `warn` root) to WARN.
+
+### ⚠️ Behaviour change on upgrade
+
+* `ctr <unreadable-file>` with input piped in used to tail the pipe; it now exits 2. Drop the
+  filename to tail stdin.
+
 ## 1.3.0
 
 ### Added
