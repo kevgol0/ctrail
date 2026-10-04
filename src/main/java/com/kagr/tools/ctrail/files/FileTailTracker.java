@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
+import com.kagr.tools.ctrail.props.TailUnit;
 import com.kagr.tools.ctrail.unit.LogLine;
 
 
@@ -85,32 +86,10 @@ public class FileTailTracker
 				CtrailProps.getInstance().getIdleNoticeSeconds() * 1000L);
 
 
-		// only look at the end of the file
+		// position at the configured amount of history
 		try
 		{
-			//
-			// line-accurate tail is preferred; the legacy byte-skip remains the
-			// fallback so an existing config with tailLastLines=0 is unchanged
-			//
-			final int tailLines = CtrailProps.getInstance().getTailLastLines();
-			if (tailLines > 0)
-			{
-				seekToLastNLines(tailLines);
-				return;
-			}
-
-			if (CtrailProps.getInstance().getSkipAheadInBytes() <= 0)
-			{
-				return;
-			}
-
-			if (_file.length() > CtrailProps.getInstance().getSkipAheadInBytes())
-			{
-				final long advacneBy = _file.length() - CtrailProps.getInstance().getSkipAheadInBytes();
-				_logger.trace("advancing file:{} to position:{}, size:{}", _fileName, advacneBy, _file.length());
-				_lastReadPosition = advacneBy;
-			}
-			_file.seek(_lastReadPosition);
+			positionForTailLast();
 		}
 		catch (final IOException ex_)
 		{
@@ -123,6 +102,57 @@ public class FileTailTracker
 			close();
 			throw new IllegalStateException("cannot position file: " + _fileName, ex_);
 		}
+	}
+
+
+
+
+
+	/**
+	 * Positions the file per &lt;tailLast&gt;: the whole file, the last N lines, the
+	 * last N bytes, or - for a count of 0 - the end, so only new lines show.
+	 *
+	 * @throws IOException if the file cannot be read or seeked
+	 */
+	private void positionForTailLast() throws IOException
+	{
+		final CtrailProps props = CtrailProps.getInstance();
+		if (props.isReadEntireFile())
+		{
+			_logger.trace("reading all of file:{}", _fileName);
+			seekTo(0);
+			return;
+		}
+
+
+		//
+		// N lines, scanned backwards; 0 lines is simply the end of the file
+		//
+		final int count = props.getTailLastCount();
+		if (props.getTailLastUnit() == TailUnit.LINES && count > 0)
+		{
+			seekToLastNLines(count);
+			return;
+		}
+
+
+		//
+		// N bytes, or the end for 0 of either unit
+		//
+		final long length = _file.length();
+		final long target = props.getTailLastUnit() == TailUnit.BYTES ? Math.max(0, length - count) : length;
+		_logger.trace("advancing file:{} to position:{}, size:{}", _fileName, target, length);
+		seekTo(target);
+	}
+
+
+
+
+
+	private void seekTo(final long position_) throws IOException
+	{
+		_lastReadPosition = position_;
+		_file.seek(position_);
 	}
 
 

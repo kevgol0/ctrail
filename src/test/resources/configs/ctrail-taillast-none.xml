@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ctrail>
+
+  <!-- CTRAIL-8 fixture: no tail setting of any kind, so the default applies -->
+  <inputFiles>
+    <maxInputFileCount>1000</maxInputFileCount>
+  </inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>100000</maxPendingLines>
+    <prependFilenameToLine>true</prependFilenameToLine>
+
+
+    <showStartupBanner>false</showStartupBanner>
+    <idleNoticeSeconds>0</idleNoticeSeconds>
+
+    <noChangeSleepTimeMillis>10</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>false</matchFirstWord>
+  </execution>
+
+
+  <coloring>
+    <filename>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
+    </filename>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <colorpair>
+        <keyword>error</keyword>
+        <fgcolor>red</fgcolor>
+      </colorpair>
+    </linecolors>
+  </coloring>
+
+</ctrail>

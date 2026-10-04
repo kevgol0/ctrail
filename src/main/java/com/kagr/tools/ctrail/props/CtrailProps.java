@@ -41,6 +41,7 @@ import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 
 
@@ -49,6 +50,7 @@ import com.kagr.tools.ctrail.ConsoleColors;
 
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,11 +77,25 @@ public class CtrailProps
 
 	@Getter @Setter private int _maxPendingLines = 100000;
 
-	@Getter @Setter private int _skipAheadInBytes = 1000;
-
 	@Getter @Setter private int _noChangeSleepTimeMillis = 100;
 
-	@Getter @Setter private int _tailLastLines = 10;
+	//
+	// <tailLast>: how much history to show when a file is opened. One setting
+	// replacing tailLastLines and skipAheadInBytes, which competed - CTRAIL-8
+	//
+	public static final int		DEFAULT_TAIL_LAST_COUNT	= 10;
+	public static final String	TAIL_LAST_ALL			= "all";
+
+	/** legacy skipAheadInBytes default, used only when emulating the deprecated keys */
+	static final int LEGACY_SKIP_AHEAD_DEFAULT = 1000;
+
+	/** how many units of history to show; 0 means start at the end */
+	@Getter private int _tailLastCount = DEFAULT_TAIL_LAST_COUNT;
+
+	@Getter private TailUnit _tailLastUnit = TailUnit.LINES;
+
+	/** true shows the whole file and overrides count and unit; set by -e or count=all */
+	@Getter @Setter private boolean _readEntireFile = false;
 
 	@Getter @Setter private boolean _showStartupBanner = true;
 
@@ -189,7 +205,6 @@ public class CtrailProps
 			setMaxNbrInputFiles(config.getInt("inputFiles.maxInputFileCount", _maxNbrInputFiles));
 			setMaxProcessingLinesPerThread(config.getInt("execution.maxProcessingLines", _maxProcessingLinesPerThread));
 			setMaxPendingLines(config.getInt("execution.maxPendingLines", _maxPendingLines));
-			setSkipAheadInBytes(config.getInt("execution.skipAheadInBytes", _skipAheadInBytes));
 			setPrependFilenameToLine(config.getBoolean("execution.prependFilenameToLine", _prependFilenameToLine));
 			setNoChangeSleepTimeMillis(config.getInt("execution.noChangeSleepTimeMillis", _noChangeSleepTimeMillis));
 			setLineSearchCaseSensitiveMatching(config.getBoolean("execution.useCaseSensitiveSarch", _lineSearchCaseSensitiveMatching));
@@ -211,7 +226,7 @@ public class CtrailProps
 			// opened, whether to announce each file, and how long a source may
 			// stay silent before ctrail says so
 			//
-			setTailLastLines(config.getInt("execution.tailLastLines", _tailLastLines));
+			initTailLast(config);
 			setShowStartupBanner(config.getBoolean("execution.showStartupBanner", _showStartupBanner));
 			setIdleNoticeSeconds(config.getInt("execution.idleNoticeSeconds", _idleNoticeSeconds));
 			setNoticeColor(getColorCode(config.getString("coloring.noticeColor", "cyan")));
@@ -224,6 +239,210 @@ public class CtrailProps
 		catch (final Exception ex_)
 		{
 			_logger.error(ex_.toString());
+		}
+	}
+
+
+
+
+
+	/**
+	 * Sets how much history to show when a file is opened, clearing any
+	 * whole-file request so a later, more specific choice wins.
+	 *
+	 * @param count_ how many units; 0 starts at the end, negative values are rejected
+	 * @param unit_  lines or bytes
+	 */
+	public void setTailLast(final int count_, @NonNull final TailUnit unit_)
+	{
+		if (count_ < 0)
+		{
+			throw new IllegalArgumentException("tail-last count must not be negative:" + count_);
+		}
+
+		_tailLastCount = count_;
+		_tailLastUnit = unit_;
+		_readEntireFile = false;
+	}
+
+
+
+
+
+	/**
+	 * Reads &lt;tailLast&gt;, or the deprecated keys it replaces. The explicit key
+	 * wins; the deprecated keys keep their legacy meaning; with neither the
+	 * default stands.
+	 *
+	 * @param config_ the loaded configuration
+	 */
+	private void initTailLast(final XMLConfiguration config_)
+	{
+		final boolean hasTailLast = !config_.subset("execution.tailLast").isEmpty();
+		final boolean hasLegacyLines = config_.containsKey("execution.tailLastLines");
+		final boolean hasLegacyBytes = config_.containsKey("execution.skipAheadInBytes");
+
+		//
+		// the new key: aliases alongside it are ignored, and said to be
+		//
+		if (hasTailLast)
+		{
+			if (hasLegacyLines || hasLegacyBytes)
+			{
+				_logger.warn("<tailLast> is set, ignoring deprecated tailLastLines/skipAheadInBytes");
+			}
+			applyTailLast(config_.getString("execution.tailLast.count", null),
+					config_.getString("execution.tailLast.unit", null));
+			return;
+		}
+
+
+		//
+		// only the deprecated keys: keep what they meant before 1.4.0
+		//
+		if (hasLegacyLines || hasLegacyBytes)
+		{
+			applyLegacyTailKeys(hasLegacyLines ? config_.getString("execution.tailLastLines", null) : null,
+					hasLegacyBytes ? config_.getString("execution.skipAheadInBytes", null) : null);
+		}
+	}
+
+
+
+
+
+	/**
+	 * Applies an explicit &lt;tailLast&gt;. A bad unit degrades to lines and a bad
+	 * count to the default, each with a WARN, rather than refusing to start.
+	 *
+	 * @param count_ the raw &lt;count&gt; text: a non-negative number or "all"
+	 * @param unit_  the raw &lt;unit&gt; text: "lines" or "bytes"
+	 */
+	void applyTailLast(final String count_, final String unit_)
+	{
+		//
+		// unit first, so a bad count still keeps a good unit's default
+		//
+		TailUnit unit = TailUnit.fromConfigValue(unit_);
+		if (unit == null)
+		{
+			_logger.warn("missing or unrecognised <tailLast><unit>:{} - using {}", unit_, TailUnit.LINES.configName());
+			unit = TailUnit.LINES;
+		}
+
+
+		//
+		// "all" is the whole file; anything else must be a non-negative number
+		//
+		if (Strings.CI.equals(StringUtils.trim(count_), TAIL_LAST_ALL))
+		{
+			setTailLast(DEFAULT_TAIL_LAST_COUNT, unit);
+			_readEntireFile = true;
+			return;
+		}
+
+		final int count = parseNonNegative(count_);
+		if (count < 0)
+		{
+			_logger.warn("unusable <tailLast><count>:{} - using {} {}",
+					count_, DEFAULT_TAIL_LAST_COUNT, TailUnit.LINES.configName());
+			setTailLast(DEFAULT_TAIL_LAST_COUNT, TailUnit.LINES);
+			return;
+		}
+		setTailLast(count, unit);
+	}
+
+
+
+
+
+	/**
+	 * Maps the deprecated tailLastLines/skipAheadInBytes onto &lt;tailLast&gt; with
+	 * the meaning they had: a positive tailLastLines wins; otherwise
+	 * skipAheadInBytes applies (default 1000), where 0 meant the whole file.
+	 *
+	 * @param lines_ the raw tailLastLines text, or null when absent
+	 * @param bytes_ the raw skipAheadInBytes text, or null when absent
+	 */
+	void applyLegacyTailKeys(final String lines_, final String bytes_)
+	{
+		logDeprecation(lines_, "tailLastLines", TailUnit.LINES);
+		logDeprecation(bytes_, "skipAheadInBytes", TailUnit.BYTES);
+
+
+		//
+		// tailLastLines > 0 wins; 0 meant "off, use the byte skip"
+		//
+		final int lines = lines_ == null ? 0 : parseNonNegative(lines_);
+		if (lines > 0)
+		{
+			if (bytes_ != null)
+			{
+				_logger.warn("both tailLastLines and skipAheadInBytes are set; tailLastLines wins, skipAheadInBytes ignored");
+			}
+			setTailLast(lines, TailUnit.LINES);
+			return;
+		}
+
+
+		//
+		// the byte skip, with its old default and its old "0 = whole file"
+		//
+		int bytes = bytes_ == null ? LEGACY_SKIP_AHEAD_DEFAULT : parseNonNegative(bytes_);
+		if (bytes < 0)
+		{
+			_logger.warn("unusable skipAheadInBytes:{} - using {}", bytes_, LEGACY_SKIP_AHEAD_DEFAULT);
+			bytes = LEGACY_SKIP_AHEAD_DEFAULT;
+		}
+		if (bytes == 0)
+		{
+			setTailLast(DEFAULT_TAIL_LAST_COUNT, TailUnit.BYTES);
+			_readEntireFile = true;
+			return;
+		}
+		setTailLast(bytes, TailUnit.BYTES);
+	}
+
+
+
+
+
+	/**
+	 * Warns that a deprecated key was used, naming its replacement.
+	 *
+	 * @param value_ the raw value, or null when the key is absent (no warning)
+	 * @param key_   the deprecated key
+	 * @param unit_  the unit the replacement would use
+	 */
+	private void logDeprecation(final String value_, final String key_, final TailUnit unit_)
+	{
+		if (value_ == null)
+		{
+			return;
+		}
+
+		_logger.warn("{} is deprecated; use <tailLast><count>{}</count><unit>{}</unit></tailLast>",
+				key_, StringUtils.trim(value_), unit_.configName());
+	}
+
+
+
+
+
+	/**
+	 * @param value_ raw text
+	 * @return the parsed value, or -1 when it is missing, not a number, or negative
+	 */
+	private static int parseNonNegative(final String value_)
+	{
+		try
+		{
+			final int parsed = Integer.parseInt(StringUtils.trimToEmpty(value_));
+			return parsed < 0 ? -1 : parsed;
+		}
+		catch (final NumberFormatException ex_)
+		{
+			return -1;
 		}
 	}
 

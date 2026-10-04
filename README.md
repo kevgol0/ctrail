@@ -23,7 +23,7 @@ At least one must be present or ctrail will not start. Place a `ctrail.xml` in a
 | `maxProcessingLines` | 1000 | Lines a reader may enqueue before yielding to the other files. |
 | `maxPendingLines` | 100000 | Bound on the pending output queue. Readers block once it fills. |
 | `prependFilenameToLine` | true | Prefix each line with its source filename. |
-| `skipAheadInBytes` | 1000 | On startup, begin this many bytes from the end of each file. `0` reads the whole file. |
+| `tailLast` | `10 lines` | History shown when a file is opened. See [below](#knowing-whether-a-file-is-actually-moving). |
 | `noChangeSleepTimeMillis` | 100 | Idle sleep when no file has advanced. |
 | `matchFirstWord` | true | `true` colors by the FIRST matching keyword; `false` by the LAST. With `false` the config order of keywords decides. |
 | `useCaseSensitiveSarch` | false | Applies to coloring keywords, `-m`, and both filter lists. |
@@ -135,14 +135,16 @@ matching `<filefilter>`, and piped input when no `<stdinfilter>` is declared.
     <maxProcessingLines>1000</maxProcessingLines>
     <maxPendingLines>100000</maxPendingLines>
     <prependFilenameToLine>true</prependFilenameToLine>
-    <skipAheadInBytes>1000</skipAheadInBytes>
     <noChangeSleepTimeMillis>100</noChangeSleepTimeMillis>
     <matchFirstWord>false</matchFirstWord>
     <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
     <charset>UTF-8</charset>
 
     <!-- file liveness -->
-    <tailLastLines>10</tailLastLines>
+    <tailLast>
+      <count>10</count>
+      <unit>lines</unit>
+    </tailLast>
     <showStartupBanner>true</showStartupBanner>
     <idleNoticeSeconds>30</idleNoticeSeconds>
   </execution>
@@ -192,13 +194,18 @@ is broken". Three settings answer that at three different moments.
 
 | Setting | Default | What it does |
 |---|---|---|
-| `tailLastLines` | `10` | Shows the last N lines when a file is opened, the same idea as `tail -n N`. Line-accurate, so the first line is never cut in half. `0` disables it and falls back to `skipAheadInBytes`. |
+| `tailLast` | `10 lines` | History shown when a file is opened: `<count>` is N, `0` (start at the end, only new lines) or `all` (whole file); `<unit>` is `lines` (like `tail -n`, never cuts a line in half) or `bytes` (like `tail -c`). A missing or unknown unit means `lines`; an unusable count means `10 lines`. Each logs a WARN. |
 | `showStartupBanner` | `true` | Prints one line per input at startup with the file size and how long ago it last changed — `ctrail: app.log - 12 KB, modified 4m 12s ago`. For a pipe it prints `ctrail: watching stdin`. |
 | `idleNoticeSeconds` | `30` | After this many seconds of silence, prints `ctrail: app.log - no movement in 30s`, and repeats at the same interval while the source stays quiet. When data returns it prints `ctrail: app.log - resumed after 4m 12s` just ahead of the new line. `0` disables it. |
 | `coloring.noticeColor` | `cyan` | The color for ctrail's own messages. They never pick up keyword coloring, so a notice mentioning "error" is not rendered as an error. |
 
-All of this works for stdin as well as files, except `tailLastLines` — a pipe is not seekable, so
+All of this works for stdin as well as files, except `tailLast` — a pipe is not seekable, so
 there is no history to recover. Idle notices stop when the pipe closes.
+
+⚠️ **Deprecated in 1.4.0: `tailLastLines` and `skipAheadInBytes`.** Both still work, keep their
+old meaning, and log a WARN naming the `<tailLast>` replacement. A positive `tailLastLines` wins
+over `skipAheadInBytes`; `tailLastLines=0` defers to it (default 1000 bytes); `skipAheadInBytes=0`
+is the whole file (`<count>all</count>`). An explicit `<tailLast>` beats both.
 
 ```
 ctrail: watching app.log - 12 KB, modified 4m 12s ago
@@ -314,9 +321,10 @@ ctr --version
 
 | Flag | Long | Description |
 |------|------|-------------|
-| `-e` | `--entirefile` | Process the entire file, not just new lines (disables `-n` and `skipAheadInBytes`) |
+| `-e` | `--entirefile` | Process the entire file, not just new lines (beats `-n`, `-c` and `tailLast`) |
 | `-m` | `--match STR` | Only show lines matching STR |
-| `-n` | `--lines N` | Show the last N lines of each file on open, like `tail -n N`; `0` disables. Overrides `tailLastLines` |
+| `-n` | `--lines N` | Show the last N lines of each file on open, like `tail -n N`; `0` shows only new lines. Overrides `tailLast` |
+| `-c` | `--bytes N` | Show the last N bytes of each file on open, like `tail -c N`; `0` shows only new lines. Overrides `tailLast`; `-n` wins if both are given |
 | `-f` | `--filters` | Enable/disable include filters (`true`/`false`) |
 | `-v` | `--exclude-filters` | Enable/disable exclude filters (`true`/`false`) |
 | `-h` | `--help` | Print help |
@@ -366,7 +374,7 @@ See [`etc/ctrail-stdin-example.xml`](etc/ctrail-stdin-example.xml) for a ready-t
 ./bin/install.sh
 
 # or specify a version explicitly
-./bin/install.sh 1.3.1
+./bin/install.sh 1.4.0
 ```
 
 The install script downloads from [GitHub Releases](https://github.com/kevgol0/ctrail/releases) and places files at:

@@ -24,11 +24,8 @@
         <!-- stdin has no filename, so prepending is not useful -->
         <prependFilenameToLine>false</prependFilenameToLine>
 
-        <!-- read from the beginning (no skip-ahead for a pipe) -->
-        <skipAheadInBytes>0</skipAheadInBytes>
-
-        <!-- a pipe is not seekable, so there is no history to tail -->
-        <tailLastLines>0</tailLastLines>
+        <!-- no <tailLast>: a pipe is not seekable, so there is no history to
+            tail and stdin is always read from wherever it currently is -->
 
         <!-- confirms ctrail started and is reading the pipe -->
         <showStartupBanner>true</showStartupBanner>
