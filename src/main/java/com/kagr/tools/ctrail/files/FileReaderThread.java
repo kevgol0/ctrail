@@ -15,6 +15,8 @@ package com.kagr.tools.ctrail.files;
 
 import java.io.IOException;
 import java.util.Locale;
+
+import org.apache.commons.lang3.StringUtils;
 import java.util.concurrent.BlockingDeque;
 
 
@@ -55,6 +57,12 @@ public class FileReaderThread implements Runnable
 	@Getter @Setter(AccessLevel.PRIVATE) private String _match;
 
 	private final CtrailProps		_props;
+
+	/** -m needle, already case-folded; null when no match was requested */
+	private final String			_needle;
+
+	/** cached once: the config cannot change for the life of this thread */
+	private final boolean			_caseSensitive;
 	private final IShutdownManager	_ender;
 
 
@@ -72,6 +80,14 @@ public class FileReaderThread implements Runnable
 		setOutput(strOutput_);
 		setMatch(match_);
 		setMaxLinesPerThread(CtrailProps.getInstance().getMaxProcessingLinesPerThread());
+
+
+		//
+		// fold the needle once. It was folded per line, twice over, because the
+		// same match ran inline and again inside shouldEmit
+		//
+		_caseSensitive = _props.isLineSearchCaseSensitiveMatching();
+		_needle = match_ == null ? null : (_caseSensitive ? match_ : match_.toLowerCase(Locale.ROOT));
 	}
 
 
@@ -223,17 +239,6 @@ public class FileReaderThread implements Runnable
 			readPos = tracker_.getFile().getFilePointer();
 			tracker_.setLastReadPosition(readPos);
 
-			// -m/--match: drop lines that do not contain the requested needle
-			if (_match != null)
-			{
-				final String needle = _props.isLineSearchCaseSensitiveMatching() ? _match : _match.toLowerCase(Locale.ROOT);
-				final String haystack = _props.isLineSearchCaseSensitiveMatching() ? line : line.toLowerCase(Locale.ROOT);
-				if (!haystack.contains(needle))
-				{
-					continue;
-				}
-			}
-
 			if (!shouldEmit(tracker_, line))
 			{
 				continue;
@@ -276,12 +281,14 @@ public class FileReaderThread implements Runnable
 	 */
 	private boolean shouldEmit(final FileTailTracker tracker_, final String line_)
 	{
-		if (_match != null)
+		//
+		// _needle is folded once in the constructor rather than per line; only the
+		// line itself has to be folded here
+		//
+		if (_needle != null)
 		{
-			final boolean caseSensitive = _props.isLineSearchCaseSensitiveMatching();
-			final String needle = caseSensitive ? _match : _match.toLowerCase(Locale.ROOT);
-			final String haystack = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
-			if (!haystack.contains(needle))
+			final String haystack = _caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
+			if (!StringUtils.contains(haystack, _needle))
 			{
 				return false;
 			}

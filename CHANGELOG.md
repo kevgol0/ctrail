@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.4.1
+
+### Changed
+
+* **`CtrailProps.getInstance()` no longer serialises every caller.** (CTRAIL-19)
+
+  The accessor was `synchronized`, so the two reader threads and the idle monitor queued behind one
+  another on a lock that exists only to guard a one-time build. It now reads a `volatile` cached
+  instance on the fast path and only takes the lock when the config actually has to be built, or
+  rebuilt because the `ctrail.cfg` system property changed. Behaviour is unchanged; the contention
+  is gone.
+
+* **The `-m` search term is folded once, not once per line.** (CTRAIL-20)
+
+  With case-insensitive matching (the default), every line allocated two lowercased copies of
+  itself and re-lowercased the search term twice, because the same comparison ran inline in the read
+  loop and again inside `shouldEmit`. The term is now folded in the constructor and the dead inline
+  copy is gone, leaving one fold per line.
+
+### Fixed
+
+* **`FileReaderThreadFilterTest` was timing-dependent.** Its helper slept a flat 400ms and then
+  asserted; on a cold or loaded JVM the reader had not drained the fixture inside that window and
+  the test saw zero lines. It now waits on the actual condition — no unread bytes, output queue
+  size settled — which also cut the class from ~2.8s to ~0.8s.
+
 ## 1.4.0
 
 ### Added

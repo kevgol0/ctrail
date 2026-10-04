@@ -156,21 +156,69 @@ public class CtrailProps
 	// the config file costs up to three Files.exists() calls, and getInstance()
 	// is on the per-line hot path, so only re-resolve when the override changes.
 	//
-	private static String _instanceCfgOverride;
+	private static volatile String _instanceCfgOverride;
 
 	private String _configFile;
 
-	public static synchronized CtrailProps getInstance()
+	/**
+	 * Returns the shared config, rebuilding it only when the CTRAIL_CFG override
+	 * has changed.
+	 *
+	 * The common path is deliberately lock-free. This is called per input line by
+	 * the reader thread and per output line by the writer thread, so a
+	 * `synchronized` method made the two contend a single class-wide monitor on
+	 * every line - serialising the pair that the bounded queue exists to decouple.
+	 * Both fields are volatile, and the instance is published before the override
+	 * it was built from, so a reader either sees a matching pair or falls through
+	 * to the locked rebuild.
+	 *
+	 * @return the current configuration, never null
+	 */
+	public static CtrailProps getInstance()
 	{
+		//
+		// fast path: no lock, no rebuild. The override is read once so the compare
+		// and the returned instance cannot straddle a swap
+		//
 		final String cfgOverride = System.getProperty(CTRAIL_CFG_KEY);
-		if (_instance != null && StringUtils.equals(cfgOverride, _instanceCfgOverride))
+		final CtrailProps cached = _instance;
+		if (cached != null && StringUtils.equals(cfgOverride, _instanceCfgOverride))
+		{
+			return cached;
+		}
+
+		return rebuild(cfgOverride);
+	}
+
+
+
+
+
+	/**
+	 * Rebuilds the shared config under lock, re-checking first so concurrent
+	 * callers that raced the fast path do not each construct one.
+	 *
+	 * @param cfgOverride_ the CTRAIL_CFG value observed by the caller
+	 * @return the configuration for that override
+	 */
+	private static synchronized CtrailProps rebuild(final String cfgOverride_)
+	{
+		if (_instance != null && StringUtils.equals(cfgOverride_, _instanceCfgOverride))
 		{
 			return _instance;
 		}
 
-		_instance = new CtrailProps(getConfigFile());
-		_instanceCfgOverride = cfgOverride;
-		return _instance;
+		_logger.debug("building config for override:{}", cfgOverride_);
+		final CtrailProps built = new CtrailProps(getConfigFile());
+
+
+		//
+		// publish the override LAST: a reader that sees the new instance with the
+		// old override simply takes the locked path and finds it already built
+		//
+		_instance = built;
+		_instanceCfgOverride = cfgOverride_;
+		return built;
 	}
 
 	public CtrailProps()
