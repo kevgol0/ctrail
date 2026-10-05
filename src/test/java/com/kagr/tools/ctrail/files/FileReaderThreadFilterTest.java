@@ -50,6 +50,15 @@ public class FileReaderThreadFilterTest
 {
 	private BlockingDeque<LogLine> _output;
 
+	/** upper bound on how long a reader is given to drain a test fixture */
+	private static final long _drainTimeoutMillis = 5000L;
+
+	/** how often the drain condition is sampled */
+	private static final long _drainPollMillis = 20L;
+
+	/** consecutive quiet samples required before the reader is stopped */
+	private static final int  _drainStableSamples = 3;
+
 
 
 	private final IShutdownManager _mgr = new IShutdownManager()
@@ -175,7 +184,16 @@ public class FileReaderThreadFilterTest
 	 * Runs the reader long enough to consume the fixture, then stops it. The
 	 * reader loop is infinite by design (it is a tail), so it is interrupted.
 	 */
-	private void runReaderBriefly(final FileTailTracker tracker_, final String match_) throws InterruptedException
+	/**
+	 * Runs a reader against the tracker until the file is fully consumed and the
+	 * output has stopped growing, then stops it.
+	 *
+	 * This used to sleep a flat 400ms, which made every test in this class
+	 * timing-dependent: on a cold JVM the reader had not drained the file inside
+	 * that window and the assertions saw zero lines. Waiting on a real condition
+	 * removes the flake and is faster in the normal case.
+	 */
+	private void runReaderBriefly(final FileTailTracker tracker_, final String match_) throws InterruptedException, IOException
 	{
 		final BlockingDeque<FileTailTracker> trackers = new LinkedBlockingDeque<>();
 		trackers.add(tracker_);
@@ -183,9 +201,44 @@ public class FileReaderThreadFilterTest
 		final Thread t = new Thread(new FileReaderThread(trackers, _output, match_, _mgr));
 		t.setDaemon(true);
 		t.start();
-		Thread.sleep(400);
+
+		waitUntilDrained(tracker_);
+
 		t.interrupt();
 		t.join(2000);
+	}
+
+
+
+
+
+	/**
+	 * Blocks until the tracker has no unread bytes AND the output queue has held
+	 * the same size for several consecutive samples.
+	 *
+	 * Both halves are needed: the reader records the read position BEFORE it
+	 * queues the line, so "nothing left to read" on its own can still be one
+	 * put() short of the line the test is about to assert on.
+	 */
+	private void waitUntilDrained(final FileTailTracker tracker_) throws InterruptedException, IOException
+	{
+		final long deadline = System.currentTimeMillis() + _drainTimeoutMillis;
+		int stableSamples = 0;
+		int previousSize = -1;
+		while (System.currentTimeMillis() < deadline)
+		{
+			Thread.sleep(_drainPollMillis);
+
+			final int size = _output.size();
+			final boolean quiet = tracker_.getRemainingSize() <= 0 && size == previousSize;
+			previousSize = size;
+
+			stableSamples = quiet ? stableSamples + 1 : 0;
+			if (stableSamples >= _drainStableSamples)
+			{
+				return;
+			}
+		}
 	}
 
 
@@ -270,6 +323,28 @@ public class FileReaderThreadFilterTest
 		assertEquals(3, lines.size());
 		assertEquals("one", lines.get(0));
 		assertEquals("three", lines.get(2));
+	}
+
+
+
+
+
+	@Test
+	public void testMatchIsCaseInsensitiveByConfigWithAnUppercaseNeedle() throws Exception
+	{
+		//
+		// the mirror of the test below: there the LINE is uppercase and the needle
+		// lowercase, so only the line's folding is exercised. The needle is folded
+		// once at construction now, and nothing caught it being skipped
+		//
+		final File f = writeTempLog("alpha here\nbravo here\n");
+
+		final FileTailTracker tracker = trackerFor(f, null);
+		runReaderBriefly(tracker, "ALPHA");
+
+		final List<String> lines = drain();
+		assertEquals("an uppercase -m term must match a lowercase line", 1, lines.size());
+		assertEquals("alpha here", lines.get(0));
 	}
 
 
