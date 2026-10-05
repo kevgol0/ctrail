@@ -125,6 +125,46 @@ public class StdinReaderThreadTest
 
 
 
+	/**
+	 * CTRAIL-20 hoisted the -m needle out of the per-line loop in
+	 * FileReaderThread and the ticket was closed; the stdin path kept folding
+	 * both the needle and the line on every line. These two tests are the pair
+	 * that pins the stdin fix - one exercises folding the NEEDLE, the other the
+	 * LINE. The file-side equivalent shipped with only the second, which let the
+	 * needle fold survive mutation.
+	 */
+	@Test
+	public void testMatchIsCaseInsensitiveWithAnUppercaseNeedle()
+	{
+		final StdinReaderThread reader = new StdinReaderThread(stream("alpha here\nbravo here\n"),
+				_output, "ALPHA", _mgr, null);
+		reader.run();
+
+		final List<String> lines = drain();
+		assertEquals("an uppercase -m term must match a lowercase line", 1, lines.size());
+		assertEquals("alpha here", lines.get(0));
+	}
+
+
+
+
+
+	@Test
+	public void testMatchIsCaseInsensitiveWithAnUppercaseLine()
+	{
+		final StdinReaderThread reader = new StdinReaderThread(stream("ALPHA HERE\nBRAVO HERE\n"),
+				_output, "alpha", _mgr, null);
+		reader.run();
+
+		final List<String> lines = drain();
+		assertEquals("a lowercase -m term must match an uppercase line", 1, lines.size());
+		assertEquals("ALPHA HERE", lines.get(0));
+	}
+
+
+
+
+
 	@Test
 	public void testMatchFiltersLines()
 	{

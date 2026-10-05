@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.4.2
+
+### Changed
+
+* **Config is read once per thread, not once per line.** (CTRAIL-19)
+
+  `LineFormatter` re-read the config on every output line and `StdinReaderThread` on every input
+  line. Both now capture it at construction, which is safe because `CtrailEntryPoint` settles the
+  config — load, then the `-e`/`-f`/`-v`/`-n` overrides — before it builds either one. `LineFormatter`'s
+  `refreshProps()` is gone; its reference compare optimised the cheap half and left a
+  `System.getProperty` lookup running unconditionally for a value that cannot change.
+
+* **Search terms are folded once, not once per line.** (CTRAIL-21)
+
+  `FileSearchFilter` lowercased every configured include and exclude term inside the per-line loop.
+  With *T* terms that was *T* wasted allocations per line per filter, on top of folding the line.
+  The folded copies are now cached and rebuilt only when the term list grows or the
+  case-sensitivity verdict flips.
+
+### Fixed
+
+* **The `-m` term was still folded per line on the stdin path.** (CTRAIL-21)
+
+  1.4.1 hoisted the needle out of the per-line loop in `FileReaderThread` only. `StdinReaderThread`
+  kept folding both the needle and the line on every line — the same duplication, on the other half
+  of the same feature. Both paths now fold the needle once in the constructor.
+
 ## 1.4.1
 
 ### Changed
