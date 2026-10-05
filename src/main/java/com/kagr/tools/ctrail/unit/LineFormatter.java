@@ -34,53 +34,46 @@ public class LineFormatter
 {
     private static final String _reset = ConsoleColors.RESET;
 
-    // cached config, refreshed only when the props instance is swapped
-    private CtrailProps _props;
-    private Hashtable<String, String> _keysToColors;
-    private Hashtable<String, String> _keysToFileColors;
-    private List<String> _keys;
-    private String[] _keyArray;
-    private int _keysSz;
-    private String _defFgColor;
-    private String _noticeColor;
-    private boolean _firstWordMatch;
-    private boolean _caseSensitive;
-
-    public LineFormatter()
-    {
-        refreshProps();
-    }
+    //
+    // config captured once at construction. CtrailEntryPoint settles the config
+    // - load, then the -e/-f/-v/-n overrides - before it builds the writer
+    // thread that owns this formatter, so there is nothing left to pick up
+    //
+    private final Hashtable<String, String> _keysToColors;
+    private final Hashtable<String, String> _keysToFileColors;
+    private final String[] _keyArray;
+    private final int _keysSz;
+    private final String _defFgColor;
+    private final String _noticeColor;
+    private final boolean _firstWordMatch;
+    private final boolean _caseSensitive;
 
     /**
-     * Re-reads the cached config only when the props instance has actually been
-     * replaced. This runs once per output line, so it must stay a reference
-     * compare -- copying every field per line was measurable overhead on a tail.
+     * Captures the config in effect now. Nothing in the application changes
+     * configuration after startup, so a formatter never has to re-read it.
+     *
+     * This used to call refreshProps() on every formatted line. The reference
+     * compare that was supposed to make that cheap optimised the cheap half -
+     * copying the fields - and left a System.getProperty lookup running
+     * unconditionally, once per output line, for a value that cannot change.
      */
-    private void refreshProps()
+    public LineFormatter()
     {
-        // bail out fast when the props instance has not changed
         final CtrailProps props = CtrailProps.getInstance();
-        if (props == _props)
-        {
-            return;
-        }
-
-        // config was swapped (e.g. reload) -- refresh every cached field
-        _props = props;
-        _keysToColors = _props.getKeysToColors();
-        _keysToFileColors = _props.getKeysToFileColors();
-        _keys = _props.getKeys();
-        _keysSz = _keys.size();
-        _defFgColor = _props.getDefaultFgColor() == null ? ConsoleColors.WHITE : _props.getDefaultFgColor();
-        _noticeColor = _props.getNoticeColor() == null ? ConsoleColors.CYAN : _props.getNoticeColor();
-        _firstWordMatch = _props.isMatchFirstWord();
-        _caseSensitive = _props.isLineSearchCaseSensitiveMatching();
+        _keysToColors = props.getKeysToColors();
+        _keysToFileColors = props.getKeysToFileColors();
+        _defFgColor = props.getDefaultFgColor() == null ? ConsoleColors.WHITE : props.getDefaultFgColor();
+        _noticeColor = props.getNoticeColor() == null ? ConsoleColors.CYAN : props.getNoticeColor();
+        _firstWordMatch = props.isMatchFirstWord();
+        _caseSensitive = props.isLineSearchCaseSensitiveMatching();
 
         //
         // getKeys() is a LinkedList, so get(i) in the per-line scan is O(n).
         // copy to an array once so formatting stays linear in key count
         //
-        _keyArray = _keys.toArray(new String[0]);
+        final List<String> keys = props.getKeys();
+        _keyArray = keys.toArray(new String[0]);
+        _keysSz = _keyArray.length;
     }
 
     public String format(final LogLine line_)
@@ -93,9 +86,6 @@ public class LineFormatter
         {
             return "";
         }
-
-        // pick up a swapped config, then use locals so format() stays thread-safe
-        refreshProps();
 
         //
         // ctrail's own liveness messages are not tailed content: they carry no

@@ -19,6 +19,8 @@ import java.io.InputStreamReader;
 import java.util.Locale;
 import java.util.concurrent.BlockingDeque;
 
+import org.apache.commons.lang3.StringUtils;
+
 
 
 import com.kagr.tools.ctrail.IShutdownManager;
@@ -57,6 +59,14 @@ public class StdinReaderThread implements Runnable
 
 	@Getter private final ActivityState _activityState;
 
+	/** config captured once; nothing changes it after startup */
+	private final CtrailProps _props;
+
+	/** -m needle, already case-folded; null when no match was requested */
+	private final String _needle;
+
+	private final boolean _caseSensitive;
+
 
 
 
@@ -70,6 +80,16 @@ public class StdinReaderThread implements Runnable
 		_match = match_;
 		_ender = shutdownMgr_;
 		_searchFilter = filter_;
+		_props = CtrailProps.getInstance();
+
+
+		//
+		// fold the needle once, the way FileReaderThread does. CTRAIL-20 removed
+		// this duplication from the file path and left the stdin path folding
+		// both the needle and the line on every line
+		//
+		_caseSensitive = _props.isLineSearchCaseSensitiveMatching();
+		_needle = match_ == null ? null : (_caseSensitive ? match_ : match_.toLowerCase(Locale.ROOT));
 
 
 		//
@@ -79,7 +99,7 @@ public class StdinReaderThread implements Runnable
 		//
 		_activityState = new ActivityState(CtrailProps.STDIN_FILTER_NAME,
 				System.currentTimeMillis(),
-				CtrailProps.getInstance().getIdleNoticeSeconds() * 1000L);
+				_props.getIdleNoticeSeconds() * 1000L);
 
 		setOutput(output_);
 	}
@@ -134,7 +154,7 @@ public class StdinReaderThread implements Runnable
 		// "stdin:" prefix even with prependFilenameToLine=false, which the file
 		// reader has always respected
 		//
-		final String source = CtrailProps.getInstance().isPrependFilenameToLine()
+		final String source = _props.isPrependFilenameToLine()
 				? CtrailProps.STDIN_FILTER_NAME
 				: null;
 
@@ -142,7 +162,7 @@ public class StdinReaderThread implements Runnable
 		// explicit charset: the default constructor takes the platform default, so
 		// `cat f | ctr` and `ctr f` could render identical bytes differently
 		//
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream, CtrailProps.getInstance().getCharset())))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(_iStream, _props.getCharset())))
 		{
 			String line;
 			while ((line = reader.readLine()) != null)
@@ -183,12 +203,10 @@ public class StdinReaderThread implements Runnable
 		// command line dynamic match, honoring the configured case sensitivity
 		// the same way the file reader does
 		//
-		if (_match != null)
+		if (_needle != null)
 		{
-			final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
-			final String needle = caseSensitive ? _match : _match.toLowerCase(Locale.ROOT);
-			final String haystack = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
-			if (!haystack.contains(needle))
+			final String haystack = _caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
+			if (!StringUtils.contains(haystack, _needle))
 			{
 				return false;
 			}

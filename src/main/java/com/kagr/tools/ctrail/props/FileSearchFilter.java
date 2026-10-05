@@ -19,6 +19,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+
 
 
 import com.kagr.tools.ctrail.files.FileReaderThread;
@@ -51,6 +53,16 @@ public class FileSearchFilter
 
 	@Getter private boolean _defLineInclude;
 
+	//
+	// folded copies of the two term lists. The terms are constant for the life
+	// of a run while the line varies, so folding them per line was T wasted
+	// allocations per line. Rebuilt only when the source list grows or the
+	// case-sensitivity verdict flips
+	//
+	private volatile FoldedTerms _foldedIncludes;
+
+	private volatile FoldedTerms _foldedExcludes;
+
 
 
 
@@ -60,6 +72,99 @@ public class FileSearchFilter
 		_fileName = toRegEx(fileName_);
 		_logger.debug("filename:{}, results in:{}", fileName_, _fileName);
 		_defLineInclude = isDefaultInclude_;
+	}
+
+
+
+
+
+	/**
+	 * A folded snapshot of a term list together with what it was folded from.
+	 * Held as one object and published through a single volatile reference write,
+	 * so a reader thread can never see the array and its provenance disagree.
+	 */
+	private static final class FoldedTerms
+	{
+		private final String[]	_terms;
+		private final int		_sourceSize;
+		private final boolean	_caseSensitive;
+
+		private FoldedTerms(final String[] terms_, final int sourceSize_, final boolean caseSensitive_)
+		{
+			_terms = terms_;
+			_sourceSize = sourceSize_;
+			_caseSensitive = caseSensitive_;
+		}
+
+		private boolean isCurrentFor(final int sourceSize_, final boolean caseSensitive_)
+		{
+			return _sourceSize == sourceSize_ && _caseSensitive == caseSensitive_;
+		}
+	}
+
+
+
+
+
+	/**
+	 * Folds every term once. The source lists are LinkedLists, so this iterates
+	 * rather than indexing.
+	 */
+	private static FoldedTerms foldTerms(final List<String> terms_, final boolean caseSensitive_)
+	{
+		final String[] folded = new String[terms_.size()];
+		int i = 0;
+		for (final String term : terms_)
+		{
+			folded[i] = caseSensitive_ ? term : term.toLowerCase(Locale.ROOT);
+			i += 1;
+		}
+		return new FoldedTerms(folded, folded.length, caseSensitive_);
+	}
+
+
+
+
+
+	/**
+	 * The folded include terms, rebuilt only when the live list has grown or the
+	 * case-sensitivity verdict has flipped since the last fold.
+	 *
+	 * Size is the staleness signal because that is how terms arrive: callers
+	 * append through the exposed list (CtrailProps.loadFilterTerms, and tests).
+	 * Nothing replaces a term in place - FileSearchFilterFoldingTest pins that.
+	 */
+	private String[] foldedIncludeTerms(final boolean caseSensitive_)
+	{
+		final FoldedTerms cached = _foldedIncludes;
+		if (cached != null && cached.isCurrentFor(_includeTerms.size(), caseSensitive_))
+		{
+			return cached._terms;
+		}
+
+		final FoldedTerms rebuilt = foldTerms(_includeTerms, caseSensitive_);
+		_foldedIncludes = rebuilt;
+		return rebuilt._terms;
+	}
+
+
+
+
+
+	/**
+	 * The exclude-side counterpart of {@link #foldedIncludeTerms(boolean)}.
+	 */
+	private String[] foldedExcludeTerms(final boolean caseSensitive_)
+	{
+		final FoldedTerms cached = _foldedExcludes;
+		if (cached != null && cached.isCurrentFor(_excldueTerms.size(), caseSensitive_))
+		{
+			return cached._terms;
+		}
+
+		final FoldedTerms rebuilt = foldTerms(_excldueTerms, caseSensitive_);
+		_foldedExcludes = rebuilt;
+		return rebuilt._terms;
 	}
 
 
@@ -138,14 +243,15 @@ public class FileSearchFilter
 
 		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
 		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
+
 		//
-		// includes trump excludes... this MUST happen first
+		// includes trump excludes... this MUST happen first. the terms are folded
+		// once and reused; only the line is folded per call
 		//
-		for (int i = 0; i < getIncludeTerms().size(); i++)
+		final String[] includeTerms = foldedIncludeTerms(caseSensitive);
+		for (int i = 0; i < includeTerms.length; i++)
 		{
-			final String includeTerm = getIncludeTerms().get(i);
-			final String normalizedTerm = caseSensitive ? includeTerm : includeTerm.toLowerCase(Locale.ROOT);
-			if (normalizedLine.contains(normalizedTerm))
+			if (StringUtils.contains(normalizedLine, includeTerms[i]))
 			{
 				//
 				// this file has a filter set, and i 
@@ -188,11 +294,12 @@ public class FileSearchFilter
 
 		final boolean caseSensitive = CtrailProps.getInstance().isLineSearchCaseSensitiveMatching();
 		final String normalizedLine = caseSensitive ? line_ : line_.toLowerCase(Locale.ROOT);
-		for (int i = 0; i < getExcldueTerms().size(); i++)
+
+		// same folded-once treatment as the include side
+		final String[] excludeTerms = foldedExcludeTerms(caseSensitive);
+		for (int i = 0; i < excludeTerms.length; i++)
 		{
-			final String excludeTerm = getExcldueTerms().get(i);
-			final String normalizedTerm = caseSensitive ? excludeTerm : excludeTerm.toLowerCase(Locale.ROOT);
-			if (normalizedLine.contains(normalizedTerm))
+			if (StringUtils.contains(normalizedLine, excludeTerms[i]))
 			{
 				//
 				// this file has a filter set, and i 
