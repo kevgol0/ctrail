@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.kagr.tools.ctrail.ConsoleColors;
 import com.kagr.tools.ctrail.props.CtrailProps;
+import com.kagr.tools.ctrail.props.QuickPattern;
 
 
 
@@ -47,6 +48,9 @@ public class LineFormatter
     private final String _noticeColor;
     private final boolean _firstWordMatch;
     private final boolean _caseSensitive;
+
+    /** quick mode's -q patterns; empty outside quick mode, when keywords colour instead */
+    private final QuickPattern[] _quickPatterns;
 
     /**
      * Captures the config in effect now. Nothing in the application changes
@@ -74,6 +78,7 @@ public class LineFormatter
         final List<String> keys = props.getKeys();
         _keyArray = keys.toArray(new String[0]);
         _keysSz = _keyArray.length;
+        _quickPatterns = props.getQuickPatterns().toArray(new QuickPattern[0]);
     }
 
     public String format(final LogLine line_)
@@ -101,23 +106,34 @@ public class LineFormatter
         String fileClr = null;
 
         //
-        // keys are lower-cased with Locale.ROOT at load time; match that here so
-        // a Turkish-locale JVM does not fold "I" differently
+        // quick mode colours by -q regex alone; the config's keywords were never
+        // loaded, and must not be consulted even if they were
         //
-        final String searchLine = _caseSensitive ? line_.getLine() : line_.getLine().toLowerCase(Locale.ROOT);
-
-        // find matching color keyword against the cached key array
-        for (int i = 0; i < _keysSz; i++)
+        if (_quickPatterns.length > 0)
         {
-            final String key = _keyArray[i];
-            if (searchLine.contains(key))
-            {
-                logClr = _keysToColors.get(key);
-                fileClr = _keysToFileColors.get(key);
+            logClr = quickColorFor(line_.getLine());
+        }
+        else
+        {
+            //
+            // keys are lower-cased with Locale.ROOT at load time; match that here so
+            // a Turkish-locale JVM does not fold "I" differently
+            //
+            final String searchLine = _caseSensitive ? line_.getLine() : line_.getLine().toLowerCase(Locale.ROOT);
 
-                if (_firstWordMatch)
+            // find matching color keyword against the cached key array
+            for (int i = 0; i < _keysSz; i++)
+            {
+                final String key = _keyArray[i];
+                if (searchLine.contains(key))
                 {
-                    break;
+                    logClr = _keysToColors.get(key);
+                    fileClr = _keysToFileColors.get(key);
+
+                    if (_firstWordMatch)
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -155,6 +171,29 @@ public class LineFormatter
         }
 
         return result;
+    }
+
+
+
+
+
+    /**
+     * Picks the colour of the first -q pattern found in the line, in the order the
+     * patterns were given; the earlier pattern wins when several match.
+     *
+     * @param line_ the raw line
+     * @return the pattern's colour, or null when no pattern matches
+     */
+    private String quickColorFor(final String line_)
+    {
+        for (final QuickPattern pattern : _quickPatterns)
+        {
+            if (pattern.matches(line_))
+            {
+                return pattern.getColor();
+            }
+        }
+        return null;
     }
 
 }

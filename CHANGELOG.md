@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+
+* **Quick mode: `-q/--quick REGEX`.** (CTRAIL-22) Shows every line and colours the lines matching
+  a regex, ignoring `ctrail.xml` and all other options:
+
+  ```
+  ctr -q ERROR -q 'time(d)?out' app.log
+  ```
+
+  * Highlights, never filters; a matching line is coloured whole.
+  * Case-sensitive Java regex, found anywhere in the line; `(?i)` for case-insensitive.
+  * Repeatable; one colour per pattern (bold red, yellow, cyan, green, purple, blue); the first
+    matching pattern wins.
+  * Fixed settings: last 1000 lines of history, filename prefix only for several files, no idle
+    notices. The config file is not read at all.
+
+### Changed
+
+* **Any command-line parse error is now a usage error** — `ctrail: <reason> (see ctr -h)` on
+  stderr, exit status `2`. Before, the raw arguments were treated as file names, so `ctr -q` or
+  `ctr --bogus` reported the option itself as an unreadable file. The exit status was already 2;
+  only the message changes.
+* An invalid `-q` pattern is reported the same way, naming the pattern and the regex error.
+
 ## 1.4.2
 
 ### Changed

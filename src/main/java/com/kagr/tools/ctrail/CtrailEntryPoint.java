@@ -26,6 +26,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.LinkedBlockingDeque;
 
 
@@ -34,7 +36,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -51,6 +52,7 @@ import com.kagr.tools.ctrail.files.OutputWriterThread;
 import com.kagr.tools.ctrail.files.StdinReaderThread;
 import com.kagr.tools.ctrail.props.CtrailProps;
 import com.kagr.tools.ctrail.props.FileSearchFilter;
+import com.kagr.tools.ctrail.props.QuickPattern;
 import com.kagr.tools.ctrail.props.TailUnit;
 import com.kagr.tools.ctrail.unit.DurationFormatter;
 import com.kagr.tools.ctrail.unit.LogLine;
@@ -71,7 +73,7 @@ public class CtrailEntryPoint implements IShutdownManager
 	private Thread					_writer;
 	private IdleMonitorThread		_idleMonitor;
 	private BlockingDeque<LogLine>	_output;
-	private String					_matchpattern;
+	@Getter private String			_matchpattern;
 	private final Object			_runtimeHolder;
 
 	/**
@@ -88,6 +90,15 @@ public class CtrailEntryPoint implements IShutdownManager
 	/** exit status when file arguments were given and none could be read */
 	static final int EXIT_NO_READABLE_INPUT = 2;
 
+	/** exit status when the command line itself cannot be used */
+	static final int EXIT_USAGE = 2;
+
+	/** options quick mode ignores; -h and --version still work */
+	static final String[] IGNORED_IN_QUICK_MODE = { "m", "n", "c", "e", "f", "v" };
+
+	/** quick mode's startup line, queued once the output exists; null outside quick mode */
+	private String _quickBanner;
+
 
 
 
@@ -95,9 +106,10 @@ public class CtrailEntryPoint implements IShutdownManager
 	public CtrailEntryPoint(final String[] args_)
 	{
 		//
-		// props
-		// 
-		loadProps();
+		// arguments before props: quick mode must install its own config before
+		// anything loads ctrail.xml, or the file's warnings would print for a
+		// config that is then thrown away
+		//
 		final String[] remainingArgs = loadArgsAndOverrides(args_);
 		_runtimeHolder = new Object();
 
@@ -124,6 +136,12 @@ public class CtrailEntryPoint implements IShutdownManager
 		{
 			throw new RuntimeException("System not ready, initReaderThread called with no output mechanism");
 		}
+
+		if (_quickBanner != null)
+		{
+			emitBanner(_quickBanner);
+		}
+
 
 		//
 		// stdin only when no file was named. Keying this on "no trackers" also
@@ -325,15 +343,6 @@ public class CtrailEntryPoint implements IShutdownManager
 
 
 
-	private CtrailProps loadProps()
-	{
-		return CtrailProps.getInstance();
-	}
-
-
-
-
-
 	/**
 	 * Applies the -n/--lines or -c/--bytes override. A value that is not a usable
 	 * number leaves the configured setting alone rather than failing the run - the
@@ -380,7 +389,40 @@ public class CtrailEntryPoint implements IShutdownManager
 
 	private String[] loadArgsAndOverrides(final String[] args_)
 	{
-		final CommandLineParser parser = new DefaultParser();
+		final Options options = buildOptions();
+		final CommandLine line = parseArgs(options, args_);
+
+
+		//
+		// -h and --version print and exit, in either mode
+		//
+		handleInfoOptions(options, line);
+
+
+		//
+		// quick mode replaces the config wholesale; otherwise the usual overrides
+		// apply on top of ctrail.xml
+		//
+		if (line.hasOption("q"))
+		{
+			applyQuickMode(line);
+		}
+		else
+		{
+			applyStandardOverrides(line);
+		}
+		return line.getArgs();
+	}
+
+
+
+
+
+	/**
+	 * @return every command line option ctrail accepts
+	 */
+	private Options buildOptions()
+	{
 		final Options options = new Options();
 
 		//
@@ -420,6 +462,13 @@ public class CtrailEntryPoint implements IShutdownManager
 				.desc("enable/disable only the <excludes> terms; overrides <filtering><excludesEnabled> in the config")
 				.build());
 
+		options.addOption(Option.builder("q")
+				.longOpt("quick").hasArg()
+				.argName("REGEX")
+				.desc("quick mode: colour lines matching REGEX (case-sensitive; repeatable, one colour each). "
+						+ "Shows every line, ignores ctrail.xml and all other options")
+				.build());
+
 		options.addOption(Option.builder("h")
 				.longOpt("help")
 				.desc("print command line directives")
@@ -429,94 +478,235 @@ public class CtrailEntryPoint implements IShutdownManager
 				.longOpt("version")
 				.desc("show version")
 				.build());
+		return options;
+	}
 
 
+
+
+
+	/**
+	 * Parses the command line. A malformed one is a usage error: before, the raw
+	 * arguments were handed on as file names, so `ctr -q` reported "-q" as an
+	 * unreadable file.
+	 *
+	 * @param options_ the accepted options
+	 * @param args_    the raw arguments
+	 * @return the parsed command line
+	 * @throws CtrailUsageException if the arguments cannot be parsed
+	 */
+	private CommandLine parseArgs(final Options options_, final String[] args_)
+	{
 		try
 		{
-			final CommandLine line = parser.parse(options, args_);
-
-			if (line.hasOption("m"))
-			{
-				_matchpattern = line.getOptionValue("m");
-			}
-			//
-			// -n wins when both are given, matching tailLastLines' precedence
-			// over skipAheadInBytes in the config
-			//
-			if (line.hasOption("c"))
-			{
-				if (line.hasOption("n"))
-				{
-					_logger.warn("both -n and -c given; -n wins, -c ignored");
-				}
-				else
-				{
-					setTailLastFromArg(line.getOptionValue("c"), TailUnit.BYTES);
-				}
-			}
-			if (line.hasOption("n"))
-			{
-				setTailLastFromArg(line.getOptionValue("n"), TailUnit.LINES);
-			}
-
-
-			//
-			// -e is applied AFTER -n and -c so that it wins, which is what the README and
-			// the help text promise. Applied before, -n silently overwrote it and
-			// `ctr -e -n 50` showed 50 lines instead of the whole file
-			//
-			if (line.hasOption("e"))
-			{
-				//
-				// the whole file means no tail positioning of any kind
-				//
-				CtrailProps.getInstance().setReadEntireFile(true);
-			}
-			if (line.hasOption("f"))
-			{
-				CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line.getOptionValue("f")));
-			}
-			if (line.hasOption("v"))
-			{
-				//
-				// -v toggles the exclude half of filtering; it used to set the
-				// same flag as -f, so the two options were indistinguishable
-				//
-				CtrailProps.getInstance().setEnabledExcludeFiltering(Boolean.parseBoolean(line.getOptionValue("v")));
-			}
-			if (line.hasOption("version"))
-			{
-				System.out.println("ctrail, version:" + CtrailProps.getInstance().getVersion());
-				System.exit(0);
-			}
-
-			if (line.hasOption("h"))
-			{
-				final HelpFormatter formatter = new HelpFormatter();
-				final String header = "Color Trail - a tail -f replacement with colored output\n\n";
-				final String footer = "\nAvailable colors (case-insensitive):\n"
-						+ "  Regular:     BLACK  RED  GREEN  YELLOW  BLUE  PURPLE  CYAN  WHITE\n"
-						+ "  Bold:        *_BOLD  (e.g. RED_BOLD)  also: ORANGE (= YELLOW_BOLD)\n"
-						+ "  Underlined:  *_UNDERLINED  (e.g. RED_UNDERLINED)\n"
-						+ "  Bright:      *_BRIGHT  (e.g. RED_BRIGHT)\n"
-						+ "  Bold Bright: *_BOLD_BRIGHT  (e.g. RED_BOLD_BRIGHT)\n"
-						+ "  Background:  *_BACKGROUND  (e.g. RED_BACKGROUND)\n"
-						+ "  Bg Bright:   *_BACKGROUND_BRIGHT  (e.g. RED_BACKGROUND_BRIGHT)\n";
-				formatter.setWidth(100);
-				formatter.printHelp("ctr [options] [file ...]", header, options, footer);
-				System.exit(0);
-			}
-
-
-			return line.getArgs();
+			return new DefaultParser().parse(options_, args_);
 		}
 		catch (final ParseException ex_)
 		{
-			_logger.error(ex_.toString());
+			throw new CtrailUsageException(ex_.getMessage() + " (see ctr -h)");
+		}
+	}
+
+
+
+
+
+	/**
+	 * Handles -h and --version, each of which prints and exits.
+	 *
+	 * @param options_ the accepted options, for the help text
+	 * @param line_    the parsed command line
+	 */
+	private void handleInfoOptions(final Options options_, final CommandLine line_)
+	{
+		if (line_.hasOption("version"))
+		{
+			System.out.println("ctrail, version:" + CtrailProps.getInstance().getVersion());
+			System.exit(0);
+		}
+
+		if (line_.hasOption("h"))
+		{
+			final HelpFormatter formatter = new HelpFormatter();
+			final String header = "Color Trail - a tail -f replacement with colored output\n\n";
+			final String footer = "\nAvailable colors (case-insensitive):\n"
+					+ "  Regular:     BLACK  RED  GREEN  YELLOW  BLUE  PURPLE  CYAN  WHITE\n"
+					+ "  Bold:        *_BOLD  (e.g. RED_BOLD)  also: ORANGE (= YELLOW_BOLD)\n"
+					+ "  Underlined:  *_UNDERLINED  (e.g. RED_UNDERLINED)\n"
+					+ "  Bright:      *_BRIGHT  (e.g. RED_BRIGHT)\n"
+					+ "  Bold Bright: *_BOLD_BRIGHT  (e.g. RED_BOLD_BRIGHT)\n"
+					+ "  Background:  *_BACKGROUND  (e.g. RED_BACKGROUND)\n"
+					+ "  Bg Bright:   *_BACKGROUND_BRIGHT  (e.g. RED_BACKGROUND_BRIGHT)\n";
+			formatter.setWidth(100);
+			formatter.printHelp("ctr [options] [file ...]", header, options_, footer);
+			System.exit(0);
+		}
+	}
+
+
+
+
+
+	/**
+	 * Applies -m, -n, -c, -e, -f and -v on top of the loaded config.
+	 *
+	 * @param line_ the parsed command line
+	 */
+	private void applyStandardOverrides(final CommandLine line_)
+	{
+		if (line_.hasOption("m"))
+		{
+			_matchpattern = line_.getOptionValue("m");
+		}
+		//
+		// -n wins when both are given, matching tailLastLines' precedence
+		// over skipAheadInBytes in the config
+		//
+		if (line_.hasOption("c"))
+		{
+			if (line_.hasOption("n"))
+			{
+				_logger.warn("both -n and -c given; -n wins, -c ignored");
+			}
+			else
+			{
+				setTailLastFromArg(line_.getOptionValue("c"), TailUnit.BYTES);
+			}
+		}
+		if (line_.hasOption("n"))
+		{
+			setTailLastFromArg(line_.getOptionValue("n"), TailUnit.LINES);
 		}
 
 
-		return args_;
+		//
+		// -e is applied AFTER -n and -c so that it wins, which is what the README and
+		// the help text promise. Applied before, -n silently overwrote it and
+		// `ctr -e -n 50` showed 50 lines instead of the whole file
+		//
+		if (line_.hasOption("e"))
+		{
+			//
+			// the whole file means no tail positioning of any kind
+			//
+			CtrailProps.getInstance().setReadEntireFile(true);
+		}
+		if (line_.hasOption("f"))
+		{
+			CtrailProps.getInstance().setEnabledFileFiltering(Boolean.parseBoolean(line_.getOptionValue("f")));
+		}
+		if (line_.hasOption("v"))
+		{
+			//
+			// -v toggles the exclude half of filtering; it used to set the
+			// same flag as -f, so the two options were indistinguishable
+			//
+			CtrailProps.getInstance().setEnabledExcludeFiltering(Boolean.parseBoolean(line_.getOptionValue("v")));
+		}
+	}
+
+
+
+
+
+	/**
+	 * Switches to quick mode: compiles the -q patterns, warns about the options
+	 * it ignores, and installs quick mode's own config in place of ctrail.xml.
+	 *
+	 * @param line_ the parsed command line
+	 * @throws CtrailUsageException if a pattern is not a valid regex
+	 */
+	protected void applyQuickMode(final CommandLine line_)
+	{
+		final List<QuickPattern> patterns = compileQuickPatterns(line_.getOptionValues("q"));
+		warnAboutIgnoredOptions(line_);
+
+
+		//
+		// several files need the filename prefix to tell their lines apart
+		//
+		final boolean multipleFiles = line_.getArgs().length > 1;
+		CtrailProps.installQuickDefaults(patterns, multipleFiles);
+		_quickBanner = describeQuickMode(patterns);
+		_logger.info("quick mode, patterns:{} files:{}", patterns.size(), line_.getArgs().length);
+	}
+
+
+
+
+
+	/**
+	 * Compiles each pattern once and gives it the next palette colour.
+	 *
+	 * @param sources_ the -q values, in the order given
+	 * @return the compiled patterns, same order
+	 * @throws CtrailUsageException naming the first pattern that is not a valid regex
+	 */
+	static List<QuickPattern> compileQuickPatterns(final String[] sources_)
+	{
+		final List<QuickPattern> patterns = new ArrayList<>();
+		for (int i = 0; i < sources_.length; i++)
+		{
+			final Pattern compiled;
+			try
+			{
+				compiled = Pattern.compile(sources_[i]);
+			}
+			catch (final PatternSyntaxException ex_)
+			{
+				throw new CtrailUsageException(StringUtils.join(
+						"-q ", sources_[i], " is not a valid regex: ", ex_.getDescription()));
+			}
+
+			final String color = CtrailProps.QUICK_PALETTE.get(i % CtrailProps.QUICK_PALETTE.size());
+			patterns.add(new QuickPattern(sources_[i], compiled, color));
+		}
+		return patterns;
+	}
+
+
+
+
+
+	/**
+	 * Warns once, listing every option quick mode is about to ignore.
+	 *
+	 * @param line_ the parsed command line
+	 */
+	private void warnAboutIgnoredOptions(final CommandLine line_)
+	{
+		final List<String> ignored = new ArrayList<>();
+		for (final String option : IGNORED_IN_QUICK_MODE)
+		{
+			if (line_.hasOption(option))
+			{
+				ignored.add("-" + option);
+			}
+		}
+
+		if (!ignored.isEmpty())
+		{
+			_logger.warn("quick mode ignores {}", StringUtils.join(ignored, " "));
+		}
+	}
+
+
+
+
+
+	/**
+	 * @param patterns_ the compiled -q patterns
+	 * @return the startup line naming the patterns, without the ctrail prefix
+	 */
+	static String describeQuickMode(final List<QuickPattern> patterns_)
+	{
+		final List<String> quoted = new ArrayList<>();
+		for (final QuickPattern pattern : patterns_)
+		{
+			quoted.add("\"" + pattern.getSource() + "\"");
+		}
+		return StringUtils.join("quick mode, highlighting ", StringUtils.join(quoted, ", "),
+				" - config and other options ignored");
 	}
 
 
@@ -727,6 +917,13 @@ public class CtrailEntryPoint implements IShutdownManager
 		try
 		{
 			trailer = new CtrailEntryPoint(args_);
+		}
+		catch (final CtrailUsageException ex_)
+		{
+			_logger.debug("exiting, unusable command line:{}", ex_.getMessage());
+			System.err.println("ctrail: " + ex_.getMessage());
+			System.exit(EXIT_USAGE);
+			return;
 		}
 		catch (final NoReadableInputException ex_)
 		{
