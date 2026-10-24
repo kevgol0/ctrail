@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CTRAIL-22 fixture: everything here would hide or recolour lines. Quick mode
+     must be untouched by all of it; normal mode must honour it, which is what
+     proves the fixture is live -->
+<ctrail>
+
+  <inputFiles>
+    <maxInputFileCount>10</maxInputFileCount>
+  </inputFiles>
+
+  <execution>
+    <maxProcessingLines>1000</maxProcessingLines>
+    <maxPendingLines>1000</maxPendingLines>
+    <prependFilenameToLine>true</prependFilenameToLine>
+    <tailLast>
+      <count>5</count>
+      <unit>bytes</unit>
+    </tailLast>
+    <idleNoticeSeconds>30</idleNoticeSeconds>
+    <noChangeSleepTimeMillis>10</noChangeSleepTimeMillis>
+    <useCaseSensitiveSarch>false</useCaseSensitiveSarch>
+    <matchFirstWord>true</matchFirstWord>
+  </execution>
+
+  <coloring>
+    <filename>
+      <blankLineOnFileChange>false</blankLineOnFileChange>
+    </filename>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <colorpair>
+        <keyword>WARN</keyword>
+        <fgcolor>yellow</fgcolor>
+      </colorpair>
+    </linecolors>
+  </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+    <excludesEnabled>true</excludesEnabled>
+    <fileFilterDefaultsToInclude>false</fileFilterDefaultsToInclude>
+
+    <stdinfilter>
+      <includes>
+        <keyword>keep</keyword>
+      </includes>
+      <excludes>
+        <keyword>drop</keyword>
+      </excludes>
+    </stdinfilter>
+
+    <filefilter>
+      <filename>quick*.log</filename>
+      <includes>
+        <keyword>keep</keyword>
+      </includes>
+      <excludes>
+        <keyword>drop</keyword>
+      </excludes>
+    </filefilter>
+  </filtering>
+
+</ctrail>

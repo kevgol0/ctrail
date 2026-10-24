@@ -306,6 +306,10 @@ ctr -n 0 /var/log/app.log
 # filter lines matching a string
 ctr -m "ERROR" /var/log/app.log
 
+# quick mode: show everything, colour lines matching a regex, ignore the config
+ctr -q ERROR /var/log/app.log
+ctr -q ERROR -q 'time(d)?out' /var/log/app.log
+
 # enable/disable include filters (overrides config)
 ctr -f true /var/log/app.log
 
@@ -327,8 +331,41 @@ ctr --version
 | `-c` | `--bytes N` | Show the last N bytes of each file on open, like `tail -c N`; `0` shows only new lines. Overrides `tailLast`; `-n` wins if both are given |
 | `-f` | `--filters` | Enable/disable include filters (`true`/`false`) |
 | `-v` | `--exclude-filters` | Enable/disable exclude filters (`true`/`false`) |
+| `-q` | `--quick REGEX` | Quick mode — see [below](#quick-mode). Repeatable; overrides the config and every other option |
 | `-h` | `--help` | Print help |
 |      | `--version` | Show version |
+
+### Quick mode
+
+`ctr -q REGEX [-q REGEX ...] [file ...]` is for "show me where X is, now". It **highlights, never
+filters**: every line is shown, and a line matching a pattern is coloured whole.
+
+- **Ignores `ctrail.xml` completely** — no filters, excludes, stdin filter or colour pairs. The file
+  is not even read.
+- **Ignores every other option** (`-m -n -c -e -f -v`), with one WARN naming them. `-h` and
+  `--version` still work.
+- Each pattern is a **case-sensitive Java regex**, found anywhere in the line. For
+  case-insensitive matching use the inline flag: `-q '(?i)error'`.
+- `-q` is **repeatable**; each pattern gets its own colour, in order: bold red, yellow, cyan, green,
+  purple, blue (then wrapping). A line matching several takes the **first** pattern's colour.
+
+| Fixed setting | Value |
+|---|---|
+| History | last 1000 lines per file, then follow |
+| Filename prefix | only when tailing more than one file |
+| Idle notices | off |
+| Charset | UTF-8 |
+
+An invalid pattern (`ctr -q '['`) is a usage error: a message on stderr and exit status `2`.
+
+```
+$ ctr -q ERROR -q 'time(d)?out' app.log
+ctrail: quick mode, highlighting "ERROR", "time(d)?out" - config and other options ignored
+ctrail: watching app.log - 102 bytes, modified 4s ago
+keep start                  (default colour)
+ERROR disk full             (red)
+request timedout            (yellow)
+```
 
 ### Filters: allow-list or deny-list, not both
 
@@ -374,7 +411,7 @@ See [`etc/ctrail-stdin-example.xml`](etc/ctrail-stdin-example.xml) for a ready-t
 ./bin/install.sh
 
 # or specify a version explicitly
-./bin/install.sh 1.4.0
+./bin/install.sh 1.5.0
 ```
 
 The install script downloads from [GitHub Releases](https://github.com/kevgol0/ctrail/releases) and places files at:

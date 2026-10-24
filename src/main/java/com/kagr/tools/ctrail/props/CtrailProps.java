@@ -145,6 +145,18 @@ public class CtrailProps
 
 	@Getter private final LinkedList<String> _keys;
 
+	/** quick mode's -q patterns, in the order given; empty outside quick mode */
+	@Getter private List<QuickPattern> _quickPatterns = List.of();
+
+	//
+	// quick mode's fixed settings - CTRAIL-22. Deliberately not configurable
+	//
+	public static final int QUICK_TAIL_LINES = 1000;
+
+	/** one colour per -q pattern, in order, wrapping after the last */
+	public static final List<String> QUICK_PALETTE = List.of(ConsoleColors.RED_BOLD, ConsoleColors.ORANGE,
+			ConsoleColors.CYAN_BOLD, ConsoleColors.GREEN_BOLD, ConsoleColors.PURPLE_BOLD, ConsoleColors.BLUE_BOLD);
+
 
 
 
@@ -224,6 +236,104 @@ public class CtrailProps
 	public CtrailProps()
 	{
 		this(getConfigFile());
+	}
+
+
+
+
+
+	/**
+	 * Replaces the shared config with quick mode's: compiled defaults plus the -q
+	 * patterns, built without reading any config file. Nothing from ctrail.xml -
+	 * filters, excludes, colour pairs - can reach quick mode, because none of it
+	 * was ever loaded.
+	 *
+	 * @param patterns_      the compiled -q patterns, at least one
+	 * @param multipleFiles_ true when more than one file is tailed, which turns on the filename prefix
+	 * @return the quick configuration, now returned by getInstance()
+	 */
+	public static synchronized CtrailProps installQuickDefaults(@NonNull final List<QuickPattern> patterns_,
+			final boolean multipleFiles_)
+	{
+		if (patterns_.isEmpty())
+		{
+			throw new IllegalArgumentException("quick mode needs at least one pattern");
+		}
+
+		_logger.debug("installing quick-mode config, patterns:{} multipleFiles:{}", patterns_.size(), multipleFiles_);
+		final CtrailProps quick = new CtrailProps(patterns_, multipleFiles_);
+
+
+		//
+		// pin the current override so getInstance() keeps returning this instance
+		// instead of rebuilding from the file
+		//
+		_instance = quick;
+		_instanceCfgOverride = System.getProperty(CTRAIL_CFG_KEY);
+		return quick;
+	}
+
+
+
+
+
+	/**
+	 * Drops the shared config so the next getInstance() rebuilds it from the config
+	 * file. Quick mode replaces the instance for the life of the JVM; tests that
+	 * exercise it call this to hand the next test a normal config.
+	 */
+	public static synchronized void resetInstance()
+	{
+		_instance = null;
+		_instanceCfgOverride = null;
+	}
+
+
+
+
+
+	/**
+	 * Quick mode's instance: field defaults, the quick settings and the patterns.
+	 * Reads no file.
+	 */
+	private CtrailProps(final List<QuickPattern> patterns_, final boolean multipleFiles_)
+	{
+		_configFile = null;
+		_keysToColors = new Hashtable<>();
+		_keysToFileColors = new Hashtable<>();
+		_fileSearchFilters = new Hashtable<>();
+		_keysToColorCount = new Hashtable<>();
+		_keys = new LinkedList<>();
+		_quickPatterns = List.copyOf(patterns_);
+
+
+		//
+		// the field initialiser holds the colour NAME "white"; only the file path
+		// converts it to an ANSI code, so set the code here
+		//
+		_defaultFgColor = ConsoleColors.WHITE;
+
+
+		//
+		// the fixed quick settings: history, no filtering, no idle notices
+		//
+		setTailLast(QUICK_TAIL_LINES, TailUnit.LINES);
+		_enabledFileFiltering = false;
+		_enabledExcludeFiltering = false;
+		_idleNoticeSeconds = 0;
+		_prependFilenameToLine = multipleFiles_;
+	}
+
+
+
+
+
+	/**
+	 * @return true when -q was given and this config is quick mode's
+	 */
+	public boolean isQuickMode()
+	{
+		return !_quickPatterns.isEmpty();
 	}
 
 	private CtrailProps(final String propsFileName_)
