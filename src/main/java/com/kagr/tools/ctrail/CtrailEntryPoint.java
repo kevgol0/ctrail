@@ -529,14 +529,14 @@ public class CtrailEntryPoint implements IShutdownManager
 		{
 			final HelpFormatter formatter = new HelpFormatter();
 			final String header = "Color Trail - a tail -f replacement with colored output\n\n";
-			final String footer = "\nAvailable colors (case-insensitive):\n"
+			final String footer = "\nText colors, for <fgcolor> / <flcolor> (case-insensitive):\n"
 					+ "  Regular:     BLACK  RED  GREEN  YELLOW  BLUE  PURPLE  CYAN  WHITE\n"
 					+ "  Bold:        *_BOLD  (e.g. RED_BOLD)  also: ORANGE (= YELLOW_BOLD)\n"
 					+ "  Underlined:  *_UNDERLINED  (e.g. RED_UNDERLINED)\n"
 					+ "  Bright:      *_BRIGHT  (e.g. RED_BRIGHT)\n"
 					+ "  Bold Bright: *_BOLD_BRIGHT  (e.g. RED_BOLD_BRIGHT)\n"
-					+ "  Background:  *_BACKGROUND  (e.g. RED_BACKGROUND)\n"
-					+ "  Bg Bright:   *_BACKGROUND_BRIGHT  (e.g. RED_BACKGROUND_BRIGHT)\n";
+					+ "\nBackgrounds, for <bgcolor> / <defaultBgColor> only (combine with <fgcolor>):\n"
+					+ "  BLACK  RED  GREEN  YELLOW  BLUE  PURPLE  CYAN  WHITE, each optionally _BRIGHT\n";
 			formatter.setWidth(100);
 			formatter.printHelp("ctr [options] [file ...]", header, options_, footer);
 			System.exit(0);

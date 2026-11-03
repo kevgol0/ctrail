@@ -36,14 +36,19 @@ At least one must be present or ctrail will not start. Place a `ctrail.xml` in a
 
 ### `<coloring>`
 
-Recognized color names:
+Two kinds of color, two elements (since 2.0.0):
 
-```
-BLACK   BLUE   CYAN   GREEN   PURPLE   RED   WHITE   YELLOW
-```
+| Element | Sets | Takes |
+|---|---|---|
+| `<fgcolor>`, `<flcolor>`, `<defaultFgColor>`, `<noticeColor>` | text color | any name in [Available colors](#available-colors) |
+| `<bgcolor>`, `<defaultBgColor>` | background | `black red green yellow blue purple cyan white`, optionally `_bright` |
 
-each also available with a `_UNDERLINED` suffix (`BLUE_UNDERLINED`, …). An unrecognized name logs a
-warning and falls back to the default foreground color.
+They combine: `<fgcolor>white</fgcolor><bgcolor>red</bgcolor>` is white text on red. A pair with
+only `<bgcolor>` keeps the default text color. The filename prefix takes the line's colors unless
+`<flcolor>` is set.
+
+An unrecognized name, a background name in a text slot (e.g. `<fgcolor>red_background</fgcolor>`),
+or an element ctrail does not read (e.g. `<bgcolour>`) logs one WARN at startup and is ignored.
 
 ```xml
 <coloring>
@@ -53,11 +58,13 @@ warning and falls back to the default foreground color.
 
     <linecolors>
         <defaultFgColor>white</defaultFgColor>
+        <defaultBgColor>black</defaultBgColor>  <!-- optional: background for unmatched lines -->
 
         <colorpair>
             <keyword>(err)</keyword>   <!-- repeatable: several keywords may share a pair -->
-            <fgcolor>red</fgcolor>     <!-- color of the log line -->
-            <flcolor>red_underlined</flcolor>  <!-- optional: color of the filename prefix -->
+            <fgcolor>white</fgcolor>   <!-- optional: text color of the log line -->
+            <bgcolor>red</bgcolor>     <!-- optional: background of the log line -->
+            <flcolor>red_underlined</flcolor>  <!-- optional: text color of the filename prefix -->
         </colorpair>
     </linecolors>
 </coloring>
@@ -232,8 +239,10 @@ Color names are **case-insensitive** in the XML config.
 | **Underlined** | `BLACK_UNDERLINED`, `RED_UNDERLINED`, `GREEN_UNDERLINED`, `YELLOW_UNDERLINED`, `BLUE_UNDERLINED`, `PURPLE_UNDERLINED`, `CYAN_UNDERLINED`, `WHITE_UNDERLINED` |
 | **Bright** (high intensity) | `BLACK_BRIGHT`, `RED_BRIGHT`, `GREEN_BRIGHT`, `YELLOW_BRIGHT`, `BLUE_BRIGHT`, `PURPLE_BRIGHT`, `CYAN_BRIGHT`, `WHITE_BRIGHT` |
 | **Bold Bright** | `BLACK_BOLD_BRIGHT`, `RED_BOLD_BRIGHT`, `GREEN_BOLD_BRIGHT`, `YELLOW_BOLD_BRIGHT`, `BLUE_BOLD_BRIGHT`, `PURPLE_BOLD_BRIGHT`, `CYAN_BOLD_BRIGHT`, `WHITE_BOLD_BRIGHT` |
-| **Background** | `BLACK_BACKGROUND`, `RED_BACKGROUND`, `GREEN_BACKGROUND`, `YELLOW_BACKGROUND`, `BLUE_BACKGROUND`, `PURPLE_BACKGROUND`, `CYAN_BACKGROUND`, `WHITE_BACKGROUND` |
-| **Background Bright** | `BLACK_BACKGROUND_BRIGHT`, `RED_BACKGROUND_BRIGHT`, `GREEN_BACKGROUND_BRIGHT`, `YELLOW_BACKGROUND_BRIGHT`, `BLUE_BACKGROUND_BRIGHT`, `PURPLE_BACKGROUND_BRIGHT`, `CYAN_BACKGROUND_BRIGHT`, `WHITE_BACKGROUND_BRIGHT` |
+
+**Backgrounds** go in `<bgcolor>` / `<defaultBgColor>` only, as a base color with an optional
+`_bright`: `BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `PURPLE`, `CYAN`, `WHITE`, or e.g.
+`RED_BRIGHT`. The old `*_BACKGROUND` names are no longer accepted anywhere (see the 2.0.0 CHANGELOG).
 
 > `ORANGE` is an alias for `YELLOW_BOLD` (bold yellow).
 
@@ -255,11 +264,20 @@ Bright cyan for debug lines:
 </colorpair>
 ```
 
-Red background for critical alerts:
+White on red for critical alerts:
 ```xml
 <colorpair>
   <keyword>FATAL</keyword>
-  <fgcolor>red_background</fgcolor>
+  <fgcolor>white_bold</fgcolor>
+  <bgcolor>red</bgcolor>
+</colorpair>
+```
+
+Background only, bright:
+```xml
+<colorpair>
+  <keyword>DEPRECATED</keyword>
+  <bgcolor>yellow_bright</bgcolor>
 </colorpair>
 ```
 
@@ -411,7 +429,7 @@ See [`etc/ctrail-stdin-example.xml`](etc/ctrail-stdin-example.xml) for a ready-t
 ./bin/install.sh
 
 # or specify a version explicitly
-./bin/install.sh 1.5.0
+./bin/install.sh 2.0.0
 ```
 
 The install script downloads from [GitHub Releases](https://github.com/kevgol0/ctrail/releases) and places files at:

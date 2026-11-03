@@ -13,7 +13,7 @@ fi
 
 if [ -z "$VERSION" ]; then
     echo "Usage: install.sh [VERSION]"
-    echo "  e.g. install.sh 1.5.0"
+    echo "  e.g. install.sh 2.0.0"
     exit 1
 fi
 

@@ -1,5 +1,56 @@
 # Changelog
 
+## 2.0.0
+
+### ⚠️ Breaking: background colors move to `<bgcolor>`
+
+`<fgcolor>` now sets the **text color only**, and the new `<bgcolor>` sets the **background only**.
+Background names (`*_BACKGROUND`, `*_BACKGROUND_BRIGHT`) are no longer accepted in `<fgcolor>`,
+`<flcolor>`, `<defaultFgColor>` or `<noticeColor>`. (CTRAIL-23)
+
+A config still using one logs one WARN at startup and that pair falls back to the default color —
+it is not converted automatically:
+
+```
+WARN - <fgcolor>red_background</fgcolor> for keyword FATAL is not a text color; use <bgcolor>red</bgcolor>
+```
+
+Migration:
+
+| Before (1.x) | After (2.0.0) |
+|---|---|
+| `<fgcolor>red_background</fgcolor>` | `<bgcolor>red</bgcolor>` |
+| `<fgcolor>red_background_bright</fgcolor>` | `<bgcolor>red_bright</bgcolor>` |
+
+A config that uses no background names behaves exactly as before: on the stock `etc/ctrail.xml`,
+1.5.0 and 2.0.0 produce byte-identical stdout and stderr.
+
+### Added
+
+* **`<bgcolor>`** in `<colorpair>`, combinable with `<fgcolor>`:
+
+  ```xml
+  <colorpair>
+    <keyword>FATAL</keyword>
+    <fgcolor>white_bold</fgcolor>
+    <bgcolor>red</bgcolor>      <!-- black red green yellow blue purple cyan white, optionally _bright -->
+  </colorpair>
+  ```
+
+  A pair with only `<bgcolor>` keeps the default text color. The filename prefix takes the line's
+  colors unless `<flcolor>` is set.
+* **`<defaultBgColor>`** under `<linecolors>`: a background for lines no pair matches. Unset keeps
+  the terminal's background.
+* **Warnings for what ctrail does not read**: an unknown element under `<coloring>` (e.g.
+  `<bgcolour>`), an unknown color name, or a color in the wrong slot each log one WARN at startup,
+  naming the keyword. Before, all of these were silently ignored.
+
+### Fixed
+
+* A `<colorpair>` without `<fgcolor>` was not counted, and a pair with two `<fgcolor>` elements
+  made ctrail read a pair that did not exist (logging `Key 'coloring.linecolors.colorpair(N).fgcolor'
+  does not map to an existing object`). Pairs are now counted by the `<colorpair>` elements themselves.
+
 ## 1.5.0
 
 ### Added

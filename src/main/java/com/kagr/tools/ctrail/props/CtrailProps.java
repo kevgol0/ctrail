@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -31,6 +30,7 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -125,6 +125,29 @@ public class CtrailProps
 	@Getter @Setter private String _defaultFgColor = "white";
 
 	@Getter @Setter private String _defaultFlColor = "";
+
+	/** background for lines no pair matches; empty means the terminal's own */
+	@Getter @Setter private String _defaultBgColor = "";
+
+	//
+	// color vocabulary since 2.0.0: <fgcolor> takes text colors, <bgcolor> takes
+	// one of these base colors, optionally _bright - CTRAIL-23
+	//
+	static final List<String> BASE_COLORS = List.of("BLACK", "RED", "GREEN", "YELLOW", "BLUE", "PURPLE", "CYAN", "WHITE");
+	private static final String BACKGROUND_SUFFIX = "_BACKGROUND";
+	private static final String BRIGHT_SUFFIX = "_BRIGHT";
+	private static final String COLOR_PAIR_KEY = "coloring.linecolors.colorpair";
+
+	/** every key under <coloring> that ctrail reads; anything else gets a WARN */
+	private static final Set<String> KNOWN_COLORING_KEYS = Set.of(
+			"coloring.noticeColor",
+			"coloring.filename.blankLineOnFileChange",
+			"coloring.linecolors.defaultFgColor",
+			"coloring.linecolors.defaultBgColor",
+			COLOR_PAIR_KEY + ".keyword",
+			COLOR_PAIR_KEY + ".fgcolor",
+			COLOR_PAIR_KEY + ".bgcolor",
+			COLOR_PAIR_KEY + ".flcolor");
 
 	@Getter @Setter private String _noticeColor = ConsoleColors.CYAN;
 
@@ -371,8 +394,10 @@ public class CtrailProps
 			// an unrecognized color name yields null, which would otherwise be
 			// concatenated into every output line as the literal text "null"
 			//
-			final String defFgColor = getColorCode(config.getString("coloring.linecolors.defaultFgColor", "white"));
+			final String defFgColor = textColorCode(config.getString("coloring.linecolors.defaultFgColor", "white"), "defaultFgColor", "");
 			setDefaultFgColor(defFgColor == null ? ConsoleColors.WHITE : defFgColor);
+			final String defBgColor = backgroundColorCode(config.getString("coloring.linecolors.defaultBgColor", ""), "defaultBgColor", "");
+			setDefaultBgColor(defBgColor == null ? "" : defBgColor);
 			setMatchFirstWord(config.getBoolean("execution.matchFirstWord", _matchFirstWord));
 			setEnabledFileFiltering(config.getBoolean("filtering.enabled", _enabledFileFiltering));
 			setEnabledExcludeFiltering(config.getBoolean("filtering.excludesEnabled", _enabledExcludeFiltering));
@@ -387,7 +412,7 @@ public class CtrailProps
 			initTailLast(config);
 			setShowStartupBanner(config.getBoolean("execution.showStartupBanner", _showStartupBanner));
 			setIdleNoticeSeconds(config.getInt("execution.idleNoticeSeconds", _idleNoticeSeconds));
-			setNoticeColor(getColorCode(config.getString("coloring.noticeColor", "cyan")));
+			setNoticeColor(textColorCode(config.getString("coloring.noticeColor", "cyan"), "noticeColor", ""));
 			setCharsetFromName(config.getString("execution.charset", StandardCharsets.UTF_8.name()));
 
 			initColoring(config);
@@ -682,91 +707,271 @@ public class CtrailProps
 	private void initColoring(final XMLConfiguration config_)
 	{
 		//
-		// commons-config hands back a bare String (not a Collection) when the
-		// config holds exactly one colorpair; extractCount handles both shapes,
-		// a raw cast used to throw and leave the count at 0 -- no colors at all
+		// count the <colorpair> nodes themselves. Counting <fgcolor> values
+		// skipped a pair with no <fgcolor> (a bg-only pair) and overcounted a
+		// pair with two, which then read a pair that did not exist
 		//
-		int lineColorCfgSz = 0;
-		try
+		final int pairCount = config_.configurationsAt("coloring.linecolors.colorpair").size();
+		_logger.trace("total number of color pairs found:{}", pairCount);
+
+		for (int i = 0; i < pairCount; i++)
 		{
-			lineColorCfgSz = extractCount(config_, "coloring.linecolors.colorpair.fgcolor");
-			_logger.trace("total number of line colors found:{}", lineColorCfgSz);
-		}
-		catch (final Exception ex_)
-		{
-			_logger.error(ex_.toString(), ex_);
+			initColorPair(config_, "coloring.linecolors.colorpair(" + i + ")");
 		}
 
-		String key = "";
-		String origfgcolor = "";
-		String fgcolor = "";
-		String origflcolor = "";
-		String flcolor = "";
-		for (int i = 0; i < lineColorCfgSz; i++)
+		warnAboutUnknownColoringElements(config_);
+	}
+
+
+
+
+
+	/**
+	 * Loads one &lt;colorpair&gt;: its keywords, and the line color composed from
+	 * &lt;fgcolor&gt; (text) and &lt;bgcolor&gt; (background), plus the optional
+	 * &lt;flcolor&gt; for the filename prefix.
+	 *
+	 * @param config_ the loaded configuration
+	 * @param prefix_ the indexed key of this pair, e.g. coloring.linecolors.colorpair(2)
+	 */
+	private void initColorPair(final XMLConfiguration config_, final String prefix_)
+	{
+		//
+		// keywords first, so every warning below can name the pair it is about
+		//
+		final String[] keys = config_.getStringArray(prefix_ + ".keyword");
+		if (keys.length == 0)
 		{
-			try
+			_logger.warn("<colorpair> with no <keyword> at {} - ignoring it", prefix_);
+			return;
+		}
+		final String context = " for keyword " + StringUtils.join(keys, ",");
+
+
+		//
+		// text and background resolve separately, then compose into the one
+		// code the formatter writes ahead of the line
+		//
+		final String fgName = config_.getString(prefix_ + ".fgcolor", "");
+		final String bgName = config_.getString(prefix_ + ".bgcolor", "");
+		final String lineColor = composeColor(textColorCode(fgName, "fgcolor", context),
+				backgroundColorCode(bgName, "bgcolor", context));
+		final String fileColor = textColorCode(config_.getString(prefix_ + ".flcolor", ""), "flcolor", context);
+		final String countKey = StringUtils.isBlank(bgName) ? fgName : fgName + "/" + bgName;
+
+
+		// register every keyword of the pair
+		for (final String key : keys)
+		{
+			registerColorKeyword(key, lineColor, fileColor, countKey);
+		}
+	}
+
+
+
+
+
+	/**
+	 * Records one keyword's colors, folding the keyword when matching is
+	 * case-insensitive.
+	 *
+	 * @param key_       the keyword as configured
+	 * @param lineColor_ the composed line color, null when the pair set none
+	 * @param fileColor_ the filename color, null when the pair set none
+	 * @param countKey_  the color names, for the per-color usage count
+	 */
+	private void registerColorKeyword(final String key_, final String lineColor_, final String fileColor_,
+			final String countKey_)
+	{
+		final String key = isLineSearchCaseSensitiveMatching() ? key_ : key_.toLowerCase(Locale.ROOT);
+		_keys.add(key);
+
+		if (!StringUtils.isEmpty(lineColor_))
+		{
+			_keysToColors.put(key, lineColor_);
+			_keysToColorCount.put(countKey_, _keysToColorCount.getOrDefault(countKey_, 0) + 1);
+		}
+		if (!StringUtils.isEmpty(fileColor_))
+		{
+			_keysToFileColors.put(key, fileColor_);
+		}
+		_logger.trace("{}=[{};{}]", key, countKey_, fileColor_ == null ? "" : "filename");
+	}
+
+
+
+
+
+	/**
+	 * Composes a text code and a background code into one. A background with no
+	 * text color keeps the default text color, so the line stays readable.
+	 *
+	 * @param text_       the text color code, may be null
+	 * @param background_ the background color code, may be null
+	 * @return the composed code, or null when neither was set
+	 */
+	String composeColor(final String text_, final String background_)
+	{
+		if (StringUtils.isEmpty(background_))
+		{
+			return text_;
+		}
+
+		final String text = StringUtils.isEmpty(text_) ? _defaultFgColor : text_;
+		return text + background_;
+	}
+
+
+
+
+
+	/**
+	 * Resolves a text color name for &lt;fgcolor&gt;, &lt;flcolor&gt;,
+	 * &lt;defaultFgColor&gt; or &lt;noticeColor&gt;. Background names belong in
+	 * &lt;bgcolor&gt; since 2.0.0 and are rejected with a WARN naming the
+	 * replacement.
+	 *
+	 * @param name_    the configured name, may be blank
+	 * @param element_ the element it came from, for the warning
+	 * @param context_ which pair, with a leading space (" for keyword X"), or empty
+	 * @return the ANSI code, or null when blank, unknown or a background name
+	 */
+	String textColorCode(final String name_, final String element_, final String context_)
+	{
+		if (StringUtils.isBlank(name_))
+		{
+			return null;
+		}
+
+		//
+		// a background name: point at <bgcolor> rather than silently ignoring it
+		//
+		final String upper = StringUtils.upperCase(StringUtils.trim(name_), Locale.ROOT);
+		if (Strings.CS.endsWith(upper, BACKGROUND_SUFFIX) || Strings.CS.endsWith(upper, BACKGROUND_SUFFIX + BRIGHT_SUFFIX))
+		{
+			_logger.warn("<{}>{}</{}>{} is not a text color; use <bgcolor>{}</bgcolor>",
+					element_, name_, element_, context_, backgroundReplacement(upper));
+			return null;
+		}
+
+
+		// anything else must be a known text color
+		final String code = getColorCode(upper);
+		if (code == null)
+		{
+			_logger.warn("unknown color <{}>{}</{}>{} - ignoring it", element_, name_, element_, context_);
+		}
+		return code;
+	}
+
+
+
+
+
+	/**
+	 * Resolves a background color name for &lt;bgcolor&gt; or
+	 * &lt;defaultBgColor&gt;: one of the eight base colors, optionally with
+	 * _bright for the high-intensity background.
+	 *
+	 * @param name_    the configured name, may be blank
+	 * @param element_ the element it came from, for the warning
+	 * @param context_ which pair, with a leading space (" for keyword X"), or empty
+	 * @return the ANSI code, or null when blank or not a background color
+	 */
+	String backgroundColorCode(final String name_, final String element_, final String context_)
+	{
+		if (StringUtils.isBlank(name_))
+		{
+			return null;
+		}
+
+		//
+		// split off _bright, then the rest must be exactly a base color
+		//
+		final String upper = StringUtils.upperCase(StringUtils.trim(name_), Locale.ROOT);
+		final boolean bright = Strings.CS.endsWith(upper, BRIGHT_SUFFIX);
+		final String base = bright ? StringUtils.removeEnd(upper, BRIGHT_SUFFIX) : upper;
+		if (!BASE_COLORS.contains(base))
+		{
+			_logger.warn("<{}>{}</{}>{} is not a background color - use one of {}, optionally with _bright",
+					element_, name_, element_, context_, StringUtils.lowerCase(StringUtils.join(BASE_COLORS, ", "), Locale.ROOT));
+			return null;
+		}
+
+		return getColorCode(base + BACKGROUND_SUFFIX + (bright ? BRIGHT_SUFFIX : ""));
+	}
+
+
+
+
+
+	/**
+	 * @param upperName_ a background name in upper case, e.g. RED_BACKGROUND_BRIGHT
+	 * @return the &lt;bgcolor&gt; spelling of the same color, e.g. red_bright
+	 */
+	private static String backgroundReplacement(final String upperName_)
+	{
+		final boolean bright = Strings.CS.endsWith(upperName_, BRIGHT_SUFFIX);
+		final String base = StringUtils.removeEnd(StringUtils.removeEnd(upperName_, BRIGHT_SUFFIX), BACKGROUND_SUFFIX);
+		return StringUtils.lowerCase(base + (bright ? BRIGHT_SUFFIX : ""), Locale.ROOT);
+	}
+
+
+
+
+
+	/**
+	 * Warns once for every element under &lt;coloring&gt; that ctrail does not
+	 * read. Before 2.0.0 a typo such as &lt;bgcolour&gt; was silently ignored.
+	 *
+	 * @param config_ the loaded configuration
+	 */
+	private void warnAboutUnknownColoringElements(final XMLConfiguration config_)
+	{
+		final Iterator<String> keys = config_.getKeys("coloring");
+		while (keys.hasNext())
+		{
+			final String key = keys.next();
+			if (KNOWN_COLORING_KEYS.contains(key))
 			{
-				origfgcolor = config_.getString("coloring.linecolors.colorpair(" + i + ").fgcolor");
-				origflcolor = config_.getString("coloring.linecolors.colorpair(" + i + ").flcolor", "");
-
-				fgcolor = getColorCode(origfgcolor);
-				flcolor = getColorCode(origflcolor);
-
-
-				String[] keys = (String[]) config_.getArray(String.class, "coloring.linecolors.colorpair(" + i + ").keyword");
-				_logger.debug("found:{}", Arrays.toString(keys));
-				for (int j = 0; j < keys.length; j++)
-				{
-
-					key = keys[j];
-					StringBuilder dbg = new StringBuilder(key);
-					dbg.append("=[");
-					if (isLineSearchCaseSensitiveMatching())
-					{
-						_keys.add(key);
-						if (!StringUtils.isEmpty(fgcolor))
-						{
-							_keysToColors.put(key, fgcolor);
-							_keysToColorCount.put(origfgcolor, _keysToColorCount.getOrDefault(origfgcolor, 0) + 1);
-							dbg.append(origfgcolor);
-						}
-						if (!StringUtils.isEmpty(flcolor))
-						{
-							_keysToFileColors.put(key, flcolor);
-							dbg.append(";").append(origflcolor);
-						}
-					}
-					else
-					{
-						_keys.add(key.toLowerCase(Locale.ROOT));
-						if (!StringUtils.isEmpty(fgcolor))
-						{
-							_keysToColors.put(key.toLowerCase(Locale.ROOT), fgcolor);
-							_keysToColorCount.put(origfgcolor, _keysToColorCount.getOrDefault(origfgcolor, 0) + 1);
-							dbg.append(origfgcolor);
-						}
-						if (!StringUtils.isEmpty(flcolor))
-						{
-							_keysToFileColors.put(key.toLowerCase(Locale.ROOT), flcolor);
-							dbg.append(";").append(origflcolor);
-						}
-					}
-					dbg.append("]");
-					_logger.trace(dbg.toString());
-				}
+				continue;
 			}
-			catch (final IllegalArgumentException ex_)
+
+			//
+			// inside a <colorpair>, name the pair's keyword so the typo is easy
+			// to find; elsewhere the path is enough
+			//
+			if (Strings.CS.startsWith(key, COLOR_PAIR_KEY + "."))
 			{
-				_logger.error("error for key:{}, bad value:{}; ignoring...", key, fgcolor);
+				warnAboutUnknownPairElement(config_, StringUtils.removeStart(key, COLOR_PAIR_KEY + "."));
 			}
-			catch (final NoSuchElementException ex_)
+			else
 			{
-				if (ex_.toString().contains(".keyword"))
-				{
-					break;
-				}
-				_logger.error(ex_.toString());
-				break;
+				_logger.warn("unknown element {} in <coloring> - ignoring it", key);
+			}
+		}
+	}
+
+
+
+
+
+	/**
+	 * Warns for each &lt;colorpair&gt; that contains an unknown element.
+	 *
+	 * @param config_ the loaded configuration
+	 * @param element_ the unknown element's path inside a pair, e.g. bgcolour
+	 */
+	private void warnAboutUnknownPairElement(final XMLConfiguration config_, final String element_)
+	{
+		final int pairCount = config_.configurationsAt(COLOR_PAIR_KEY).size();
+		for (int i = 0; i < pairCount; i++)
+		{
+			final String prefix = COLOR_PAIR_KEY + "(" + i + ")";
+			if (config_.containsKey(prefix + "." + element_))
+			{
+				_logger.warn("unknown element <colorpair>/<{}> for keyword {} - valid: keyword, fgcolor, bgcolor, flcolor",
+						element_, StringUtils.join(config_.getStringArray(prefix + ".keyword"), ","));
 			}
 		}
 	}
@@ -1091,7 +1296,11 @@ public class CtrailProps
 			return ConsoleColors.WHITE_BACKGROUND_BRIGHT;
 
 		default:
-			_logger.warn("color:{} not recognized, returning null", color_);
+			//
+			// DEBUG: textColorCode/backgroundColorCode warn with the element and
+			// keyword, which is what the user needs; warning here too doubled it
+			//
+			_logger.debug("color:{} not recognized, returning null", color_);
 		}
 
 
