@@ -71,7 +71,7 @@
             on a line, then the line will be colored with the FIRST keyword
             found on that line -->
         <linecolors>
-            <!-- COLORS ARE (case-insensitive):
+            <!-- TEXT COLORS, for <fgcolor>, <flcolor>, <defaultFgColor> (case-insensitive):
 
                 Regular:           BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE
                 Bold:              BLACK_BOLD, RED_BOLD, GREEN_BOLD, ORANGE / YELLOW_BOLD,
@@ -84,16 +84,20 @@
                 Bold Bright:       BLACK_BOLD_BRIGHT, RED_BOLD_BRIGHT, GREEN_BOLD_BRIGHT,
                                    YELLOW_BOLD_BRIGHT, BLUE_BOLD_BRIGHT, PURPLE_BOLD_BRIGHT,
                                    CYAN_BOLD_BRIGHT, WHITE_BOLD_BRIGHT
-                Background:        BLACK_BACKGROUND, RED_BACKGROUND, GREEN_BACKGROUND,
-                                   YELLOW_BACKGROUND, BLUE_BACKGROUND, PURPLE_BACKGROUND,
-                                   CYAN_BACKGROUND, WHITE_BACKGROUND
-                Background Bright: BLACK_BACKGROUND_BRIGHT, RED_BACKGROUND_BRIGHT,
-                                   GREEN_BACKGROUND_BRIGHT, YELLOW_BACKGROUND_BRIGHT,
-                                   BLUE_BACKGROUND_BRIGHT, PURPLE_BACKGROUND_BRIGHT,
-                                   CYAN_BACKGROUND_BRIGHT, WHITE_BACKGROUND_BRIGHT
+
+                BACKGROUNDS, for <bgcolor> and <defaultBgColor> only:
+                                   BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE,
+                                   each optionally _BRIGHT (e.g. RED_BRIGHT)
+
+                <fgcolor> and <bgcolor> combine: white text on red is
+                <fgcolor>white</fgcolor><bgcolor>red</bgcolor>
             -->
 
             <defaultFgColor>white</defaultFgColor>
+
+            <!-- optional background for lines no pair matches; omit to keep the
+                terminal's own background -->
+            <!-- <defaultBgColor>black</defaultBgColor> -->
 
 
 
@@ -101,7 +105,8 @@
                 <colorpair>
                 <keyword>(dbg)</keyword>
                 <fgcolor>blue</fgcolor>
-                <flcolor>blue_underline</flcolor>
+                <bgcolor>white</bgcolor>
+                <flcolor>blue_underlined</flcolor>
                 </colorpair>
             -->
 

@@ -66,7 +66,12 @@ public class LineFormatter
         final CtrailProps props = CtrailProps.getInstance();
         _keysToColors = props.getKeysToColors();
         _keysToFileColors = props.getKeysToFileColors();
-        _defFgColor = props.getDefaultFgColor() == null ? ConsoleColors.WHITE : props.getDefaultFgColor();
+        //
+        // unmatched lines take the default text color plus <defaultBgColor>, which
+        // is empty unless configured - so output is unchanged without it
+        //
+        final String defaultText = props.getDefaultFgColor() == null ? ConsoleColors.WHITE : props.getDefaultFgColor();
+        _defFgColor = defaultText + StringUtils.defaultString(props.getDefaultBgColor());
         _noticeColor = props.getNoticeColor() == null ? ConsoleColors.CYAN : props.getNoticeColor();
         _firstWordMatch = props.isMatchFirstWord();
         _caseSensitive = props.isLineSearchCaseSensitiveMatching();

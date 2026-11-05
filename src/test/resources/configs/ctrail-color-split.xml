@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CTRAIL-23 fixture: <fgcolor> is text-only, <bgcolor> background-only.
+     Every pair below exercises one rule; ColorSplitPropsTest names them -->
+<ctrail>
+  <execution>
+    <prependFilenameToLine>true</prependFilenameToLine>
+    <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
+    <matchFirstWord>true</matchFirstWord>
+  </execution>
+
+  <coloring>
+    <noticeColor>red_background</noticeColor>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <defaultBgColor>blue</defaultBgColor>
+
+      <colorpair><keyword>ERROR</keyword><fgcolor>white</fgcolor><bgcolor>red</bgcolor></colorpair>
+      <colorpair><keyword>BGONLY</keyword><bgcolor>RED</bgcolor></colorpair>
+      <colorpair><keyword>BRIGHT</keyword><fgcolor>red</fgcolor><bgcolor>red_bright</bgcolor></colorpair>
+      <colorpair><keyword>OLDBG</keyword><fgcolor>red_background</fgcolor></colorpair>
+      <colorpair><keyword>BADBG</keyword><fgcolor>blue</fgcolor><bgcolor>red_bold</bgcolor></colorpair>
+      <colorpair><keyword>UNKNOWN</keyword><fgcolor>chartreuse</fgcolor></colorpair>
+      <colorpair><keyword>FLBG</keyword><fgcolor>purple</fgcolor><flcolor>yellow_background</flcolor></colorpair>
+      <colorpair><keyword>FLTEXT</keyword><fgcolor>white</fgcolor><bgcolor>red</bgcolor><flcolor>yellow</flcolor></colorpair>
+      <colorpair><keyword>AFTER</keyword><fgcolor>cyan</fgcolor></colorpair>
+    </linecolors>
+  </coloring>
+</ctrail>

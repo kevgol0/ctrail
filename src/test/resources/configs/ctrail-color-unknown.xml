@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CTRAIL-23 fixture: elements ctrail does not read. Each must WARN once,
+     and everything after <coloring> must still load -->
+<ctrail>
+  <execution>
+    <useCaseSensitiveSarch>true</useCaseSensitiveSarch>
+    <idleNoticeSeconds>7</idleNoticeSeconds>
+  </execution>
+
+  <coloring>
+    <linecolors>
+      <defaultFgColor>white</defaultFgColor>
+      <sparkle>yes</sparkle>
+      <colorpair><keyword>ERROR</keyword><fgcolor>red</fgcolor><bgcolour>white</bgcolour></colorpair>
+      <colorpair><keyword>WARN</keyword><fgcolor>yellow</fgcolor></colorpair>
+    </linecolors>
+  </coloring>
+
+  <filtering>
+    <enabled>true</enabled>
+    <filefilter>
+      <filename>app.log</filename>
+      <includes><keyword>keep</keyword></includes>
+    </filefilter>
+  </filtering>
+</ctrail>
